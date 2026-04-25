@@ -32,25 +32,27 @@ import {
 } from "recharts";
 
 import {
-  adoptionPlan,
-  adminMetrics,
-  associations,
-  campusEvents,
-  engagementData,
-  helpRequests,
-  impactProfile,
-  recommendations,
-  riskItems,
-  students,
-} from "@/data/mock-campus";
-import {
   calculateConfidence,
   calculateRecommendationScore,
   getDominantRisk,
   scoreAsPercent,
 } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
-import type { Recommendation } from "@/types/campus";
+import type {
+  Recommendation,
+  Student,
+  CampusEvent,
+  Association,
+  HelpRequest,
+  ImpactProfile,
+} from "@/types/campus";
+import * as api from "@/lib/api";
+import { 
+  adoptionPlan as mockAdoptionPlan, 
+  adminMetrics as mockAdminMetrics,
+  engagementData as mockEngagementData,
+  riskItems as mockRiskItems
+} from "@/data/mock-campus";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,12 +66,88 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-const student = students[0];
-
 export function CampusWorkspace() {
-  const [selectedRequestId, setSelectedRequestId] = useState(helpRequests[0]?.id);
-  const selectedRequest = helpRequests.find((request) => request.id === selectedRequestId);
   const [activeTab, setActiveTab] = useState("student");
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Data state
+  const [student, setStudent] = useState<Student | null>(null);
+  const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
+  const [events, setEvents] = useState<CampusEvent[]>([]);
+  const [associations, setAssociations] = useState<Association[]>([]);
+  const [impact, setImpact] = useState<ImpactProfile | null>(null);
+  const [requests, setRequests] = useState<HelpRequest[]>([]);
+
+  const [selectedRequestId, setSelectedRequestId] = useState<string | undefined>();
+  const selectedRequest = requests.find((request) => request.id === selectedRequestId);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        setIsLoading(true);
+        // We'll simulate picking the first student for the demo
+        const allStudents = await api.getStudents();
+        if (allStudents.length === 0) throw new Error("No students found");
+        
+        const currentStudent = allStudents[0];
+        setStudent(currentStudent);
+
+        const [recs, evs, assocs, imp] = await Promise.all([
+          api.getRecommendations(currentStudent.id),
+          api.getEvents(),
+          api.getAssociations(),
+          api.getImpactProfile(currentStudent.id),
+        ]);
+
+        setRecommendations(recs);
+        setEvents(evs);
+        setAssociations(assocs);
+        setImpact(imp);
+        // For now using mock requests if API doesn't have it yet or mapping it
+        // setRequests(reqs); 
+        
+        setIsLoading(false);
+      } catch (err) {
+        console.error(err);
+        setError("Failed to connect to the backend radar.");
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-radar-blue border-t-transparent" />
+          <p className="font-display font-black text-radar-blue animate-pulse">Scanning Campus Signals...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !student) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background p-6">
+        <Card className="max-w-md border-radar-clay/20 bg-radar-clay/5">
+          <CardHeader>
+            <CardTitle className="text-radar-clay flex items-center gap-2">
+              <CircleAlert className="h-5 w-5" /> Connection Lost
+            </CardTitle>
+            <CardDescription>{error || "No student context found."}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => window.location.reload()} className="w-full bg-radar-clay hover:bg-radar-clay/90 text-white">
+              Retry Connection
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-background relative">
@@ -207,11 +285,13 @@ export function CampusWorkspace() {
           <div className="flex-1 p-8 pb-20 lg:p-12">
             <div className="mx-auto max-w-6xl w-full">
               <TabsContent value="student" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <StudentRadar />
+                <StudentRadar student={student} recommendations={recommendations} />
               </TabsContent>
 
               <TabsContent value="impact" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
                 <ImpactSection
+                  impact={impact}
+                  requests={requests}
                   selectedRequestId={selectedRequestId}
                   selectedRequestTitle={selectedRequest?.title}
                   onSelectRequest={setSelectedRequestId}
@@ -219,7 +299,7 @@ export function CampusWorkspace() {
               </TabsContent>
 
               <TabsContent value="events" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <EventsSection />
+                <EventsSection events={events} associations={associations} />
               </TabsContent>
 
               <TabsContent value="admin" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -227,7 +307,7 @@ export function CampusWorkspace() {
               </TabsContent>
 
               <TabsContent value="settings" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <SettingsSection />
+                <SettingsSection student={student} />
               </TabsContent>
             </div>
           </div>
@@ -238,7 +318,7 @@ export function CampusWorkspace() {
   );
 }
 
-function StudentRadar() {
+function StudentRadar({ student, recommendations }: { student: Student; recommendations: Recommendation[] }) {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
@@ -253,13 +333,20 @@ function StudentRadar() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {recommendations.map((recommendation, index) => (
-          <RecommendationCard
-            index={index}
-            key={recommendation.id}
-            recommendation={recommendation}
-          />
-        ))}
+        {recommendations.length > 0 ? (
+          recommendations.map((recommendation, index) => (
+            <RecommendationCard
+              index={index}
+              key={recommendation.id}
+              recommendation={recommendation}
+            />
+          ))
+        ) : (
+          <div className="col-span-full py-20 text-center">
+            <Compass className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />
+            <p className="text-muted-foreground font-semibold">No signals detected yet. Try updating your profile context.</p>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -279,6 +366,7 @@ function RecommendationCard({
     association: "group-hover:border-radar-blue/50",
     help: "group-hover:border-radar-clay/50",
     career: "group-hover:border-radar-forest/50",
+    person: "group-hover:border-radar-blue/50",
   }[recommendation.type] || "group-hover:border-border/60";
 
   const glowMapping = {
@@ -286,6 +374,7 @@ function RecommendationCard({
     association: "from-radar-blue/10",
     help: "from-radar-clay/10",
     career: "from-radar-forest/10",
+    person: "from-radar-blue/10",
   }[recommendation.type] || "from-transparent";
 
   const stripMapping = {
@@ -293,6 +382,7 @@ function RecommendationCard({
     association: "group-hover:from-radar-blue",
     help: "group-hover:from-radar-clay",
     career: "group-hover:from-radar-forest",
+    person: "group-hover:from-radar-blue",
   }[recommendation.type] || "group-hover:from-radar-blue";
 
   return (
@@ -336,15 +426,20 @@ function RecommendationCard({
 }
 
 function ImpactSection({
+  impact,
+  requests,
   selectedRequestId,
   selectedRequestTitle,
   onSelectRequest,
 }: {
+  impact: ImpactProfile | null;
+  requests: HelpRequest[];
   selectedRequestId?: string;
   selectedRequestTitle?: string;
   onSelectRequest: (id: string) => void;
 }) {
-  const helpedTotal = impactProfile.skills.reduce((sum, skill) => sum + skill.helpedCount, 0);
+  if (!impact) return null;
+  const helpedTotal = impact.skills.reduce((sum, skill) => sum + skill.helpedCount, 0);
 
   return (
     <div className="space-y-8">
@@ -377,7 +472,7 @@ function ImpactSection({
             </div>
             
             <div className="mt-10 flex flex-wrap gap-2">
-              {impactProfile.badges.map((badge) => (
+              {impact.badges.map((badge) => (
                 <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-none backdrop-blur-md px-3 py-1.5 font-bold" key={badge}>
                   {badge}
                 </Badge>
@@ -392,7 +487,7 @@ function ImpactSection({
             <CardDescription>Mentorship performance based on peer feedback.</CardDescription>
           </CardHeader>
           <CardContent className="flex-1 space-y-7">
-            {impactProfile.skills.map((skill) => (
+            {impact.skills.map((skill) => (
               <div key={skill.name}>
                 <div className="mb-2 flex justify-between gap-3 text-sm font-black">
                   <span>{skill.name}</span>
@@ -417,30 +512,34 @@ function ImpactSection({
         </CardHeader>
         <CardContent className="px-8 pb-8">
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {helpRequests.map((request) => (
-              <button
-                className={cn(
-                  "group w-full rounded-2xl border bg-background/50 p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:bg-card",
-                  selectedRequestId === request.id ? "border-radar-blue/50 shadow-sm ring-1 ring-radar-blue/20" : "border-border/60"
-                )}
-                key={request.id}
-                type="button"
-                onClick={() => onSelectRequest(request.id)}
-              >
-                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                  <Badge variant="outline" className="text-[10px] bg-background">{request.skill}</Badge>
-                  <Badge variant={request.status === "Completed" ? "success" : "secondary"} className="uppercase tracking-wider text-[9px] px-2 py-0.5">
-                    {request.status}
-                  </Badge>
-                </div>
-                <h3 className="font-display text-lg font-black leading-tight tracking-[-0.02em] group-hover:text-radar-blue transition-colors">{request.title}</h3>
-                <p className="mt-1 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <span className="inline-block h-4 w-4 rounded-full bg-border grid place-items-center text-[8px] uppercase">{request.requester.substring(0, 1)}</span>
-                  {request.requester}
-                </p>
-                <p className="mt-4 text-sm leading-relaxed text-muted-foreground line-clamp-2">{request.detail}</p>
-              </button>
-            ))}
+            {requests.length > 0 ? (
+              requests.map((request) => (
+                <button
+                  className={cn(
+                    "group w-full rounded-2xl border bg-background/50 p-6 text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-card hover:bg-card",
+                    selectedRequestId === request.id ? "border-radar-blue/50 shadow-sm ring-1 ring-radar-blue/20" : "border-border/60"
+                  )}
+                  key={request.id}
+                  type="button"
+                  onClick={() => onSelectRequest(request.id)}
+                >
+                  <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                    <Badge variant="outline" className="text-[10px] bg-background">{request.skill}</Badge>
+                    <Badge variant={request.status === "Completed" ? "success" : "secondary"} className="uppercase tracking-wider text-[9px] px-2 py-0.5">
+                      {request.status}
+                    </Badge>
+                  </div>
+                  <h3 className="font-display text-lg font-black leading-tight tracking-[-0.02em] group-hover:text-radar-blue transition-colors">{request.title}</h3>
+                  <p className="mt-1 text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+                    <span className="inline-block h-4 w-4 rounded-full bg-border grid place-items-center text-[8px] uppercase">{request.requester.substring(0, 1)}</span>
+                    {request.requester}
+                  </p>
+                  <p className="mt-4 text-sm leading-relaxed text-muted-foreground line-clamp-2">{request.detail}</p>
+                </button>
+              ))
+            ) : (
+              <p className="text-muted-foreground text-center col-span-full py-10">No active help requests found.</p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -448,7 +547,7 @@ function ImpactSection({
   );
 }
 
-function EventsSection() {
+function EventsSection({ events, associations }: { events: CampusEvent[]; associations: Association[] }) {
   return (
     <div className="space-y-8">
       <div>
@@ -463,32 +562,36 @@ function EventsSection() {
             <Button variant="ghost" size="sm" className="text-radar-blue">See Calendar</Button>
           </div>
           <div className="space-y-4">
-            {campusEvents.map((event) => (
-              <Card className="overflow-hidden border-border/50 bg-card/40 backdrop-blur-md shadow-sm transition-all hover:bg-card hover:shadow-card group" key={event.id}>
-                <div className="flex justify-between items-center bg-background/50 px-6 py-3 border-b border-border/40">
-                  <Badge variant="secondary" className="bg-radar-amber/15 text-radar-amber shadow-none">{event.startTime}</Badge>
-                  <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                    <span className="h-1.5 w-1.5 rounded-full bg-radar-blue inline-block" /> {event.location}
-                  </span>
-                </div>
-                <CardContent className="p-6">
-                  <h3 className="font-display text-xl font-black leading-tight tracking-[-0.02em] mb-2">{event.title}</h3>
-                  <p className="text-sm leading-relaxed text-muted-foreground mb-6 line-clamp-2">{event.description}</p>
-                  
-                  <div className="flex flex-wrap items-center justify-between gap-4 mt-auto">
-                    <div className="flex items-center gap-3">
-                      <div className="flex -space-x-2">
-                         <div className="h-7 w-7 rounded-full bg-radar-forest/20 border-2 border-background flex items-center justify-center text-[9px] font-bold text-radar-forest z-30">+</div>
-                         <div className="h-7 w-7 rounded-full bg-radar-blue/80 border-2 border-background z-20" />
-                         <div className="h-7 w-7 rounded-full bg-radar-amber border-2 border-background z-10" />
-                      </div>
-                      <span className="text-xs font-semibold text-muted-foreground">{event.interestedCount} going</span>
-                    </div>
-                    <Button size="sm" className="rounded-xl shadow-none">RSVP Now</Button>
+            {events.length > 0 ? (
+              events.map((event) => (
+                <Card className="overflow-hidden border-border/50 bg-card/40 backdrop-blur-md shadow-sm transition-all hover:bg-card hover:shadow-card group" key={event.id}>
+                  <div className="flex justify-between items-center bg-background/50 px-6 py-3 border-b border-border/40">
+                    <Badge variant="secondary" className="bg-radar-amber/15 text-radar-amber shadow-none">{event.startTime}</Badge>
+                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-radar-blue inline-block" /> {event.location}
+                    </span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <CardContent className="p-6">
+                    <h3 className="font-display text-xl font-black leading-tight tracking-[-0.02em] mb-2">{event.title}</h3>
+                    <p className="text-sm leading-relaxed text-muted-foreground mb-6 line-clamp-2">{event.description}</p>
+                    
+                    <div className="flex flex-wrap items-center justify-between gap-4 mt-auto">
+                      <div className="flex items-center gap-3">
+                        <div className="flex -space-x-2">
+                           <div className="h-7 w-7 rounded-full bg-radar-forest/20 border-2 border-background flex items-center justify-center text-[9px] font-bold text-radar-forest z-30">+</div>
+                           <div className="h-7 w-7 rounded-full bg-radar-blue/80 border-2 border-background z-20" />
+                           <div className="h-7 w-7 rounded-full bg-radar-amber border-2 border-background z-10" />
+                        </div>
+                        <span className="text-xs font-semibold text-muted-foreground">{event.interestedCount} going</span>
+                      </div>
+                      <Button size="sm" className="rounded-xl shadow-none">RSVP Now</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <p className="text-muted-foreground">No upcoming events found.</p>
+            )}
           </div>
         </div>
 
@@ -555,7 +658,7 @@ function AdminSection() {
       </div>
 
       <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-        {adminMetrics.map((metric, i) => (
+        {mockAdminMetrics.map((metric, i) => (
           <Card className={cn(
             "relative overflow-hidden p-6 border-border/40 transition-all hover:-translate-y-1 hover:shadow-card group",
             metric.tone === "warning" ? "bg-radar-clay/5 hover:border-radar-clay/30" : 
@@ -585,7 +688,7 @@ function AdminSection() {
           </CardHeader>
           <CardContent className="h-[380px] p-8">
             <ResponsiveContainer height="100%" width="100%">
-              <BarChart data={engagementData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <BarChart data={mockEngagementData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border) / 0.4)" />
                 <XAxis dataKey="domain" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))", fontWeight: 600 }} dy={15} />
                 <YAxis tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
@@ -618,7 +721,7 @@ function AdminSection() {
               </div>
             </CardHeader>
             <CardContent className="space-y-5">
-              {riskItems.map((risk) => (
+              {mockRiskItems.map((risk) => (
                 <div className="group relative pl-4" key={risk.title}>
                   <div className="absolute left-0 top-1.5 h-1.5 w-1.5 rounded-full bg-radar-clay" />
                   <div className="mb-1">
@@ -635,7 +738,7 @@ function AdminSection() {
   );
 }
 
-function SettingsSection() {
+function SettingsSection({ student }: { student: Student }) {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 

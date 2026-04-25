@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 
 export function ok<T>(data: T, init?: ResponseInit) {
-  return NextResponse.json(data, init);
+  const headers = new Headers(init?.headers);
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+  headers.set("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  
+  return NextResponse.json(data, { ...init, headers });
 }
 
 export function created<T>(data: T) {
