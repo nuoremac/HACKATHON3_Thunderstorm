@@ -1,22 +1,49 @@
-import { createHelpRequest } from "@/lib/db";
-import { badRequest, created, parseJson, serverError } from "@/lib/http";
-import type { HelpRequest } from "@/lib/types";
+import { createHelpRequest, getStudentById } from "@/lib/db";
+import { apiError, assertExists, handleRouteError, ok, parseBody, requireObject } from "@/lib/http";
+import { sanitizeHelpRequestPayload } from "@/lib/validators";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
   try {
-    const payload = await parseJson<Partial<HelpRequest>>(request);
-    if (!payload.requester_id || !payload.skill || !payload.message) {
-      return badRequest("requester_id, skill, and message are required");
+    const payload = requireObject(await parseBody<Record<string, unknown>>(request));
+    const sanitized = sanitizeHelpRequestPayload(payload, "create");
+
+    await assertExists(
+      await getStudentById(sanitized.requester_id as string),
+      "utilisateur inexistant",
+      "STUDENT_NOT_FOUND",
+      400
+    );
+
+    if (sanitized.helper_id) {
+      await assertExists(
+        await getStudentById(sanitized.helper_id),
+        "utilisateur inexistant",
+        "STUDENT_NOT_FOUND",
+        400
+      );
     }
 
-    const record = await createHelpRequest({
-      ...payload,
-      status: payload.status ?? "open",
-      request_type: payload.request_type ?? "ask_for_help"
-    });
+    if (sanitized.helper_id && sanitized.helper_id === sanitized.requester_id) {
+      throw apiError(
+        422,
+        "le demandeur ne peut pas etre son propre helper",
+        "INVALID_HELP_REQUEST_RELATION"
+      );
+    }
 
-    return created({ data: record });
+    if (sanitized.status === "completed" && !sanitized.helper_id) {
+      throw apiError(422, "un helper est requis pour terminer la demande", "HELPER_REQUIRED");
+    }
+
+    const record = await createHelpRequest(sanitized);
+    return ok(record, { status: 201 });
   } catch (error) {
-    return serverError("Failed to create help request", String(error));
+    return handleRouteError(
+      error,
+      "impossible de creer la demande d'aide",
+      "HELP_REQUEST_CREATE_FAILED"
+    );
   }
 }

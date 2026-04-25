@@ -99,26 +99,6 @@ function availabilityScore(context: CandidateContext) {
 
   if (targetType === "help_opportunity") {
     const request = target as HelpRequest;
-    if (request.scheduled_start && request.scheduled_end) {
-      const start = new Date(request.scheduled_start).getTime();
-      const end = new Date(request.scheduled_end).getTime();
-      const requiredMinutes = Math.max(30, Math.round((end - start) / 60000));
-      if (!windows.length) {
-        const clashes = timetableSlots.some((slot) => {
-          const slotStart = new Date(slot.start_time).getTime();
-          const slotEnd = new Date(slot.end_time).getTime();
-          return Math.max(slotStart, start) < Math.min(slotEnd, end);
-        });
-        return clashes ? 0.2 : 0.7;
-      }
-      const overlapMinutes = windows.reduce((best, window) => {
-        const windowStart = new Date(window.start).getTime();
-        const windowEnd = new Date(window.end).getTime();
-        const overlap = Math.max(0, Math.min(windowEnd, end) - Math.max(windowStart, start));
-        return Math.max(best, Math.round(overlap / 60000));
-      }, 0);
-      return clamp(overlapMinutes / requiredMinutes);
-    }
     return 0.7;
   }
 
@@ -298,8 +278,10 @@ export function buildRecommendation(context: CandidateContext): RecommendationOu
   const assumptionRisk = assumptionRiskPenalty(assumptions);
   const freshness = freshnessScore([
     ...sources.map((item) => item.last_updated),
-    ...(target as { updated_at?: string }).updated_at ? [(target as { updated_at?: string }).updated_at as string] : [],
-    ...(student.updated_at ? [student.updated_at] : [])
+    ...(target as { created_at?: string }).created_at
+      ? [(target as { created_at?: string }).created_at as string]
+      : [],
+    ...(student.created_at ? [student.created_at] : [])
   ]);
   const reliability = sourceReliabilityScore(
     [...sources.map((item) => item.source_type), ...relevantSignals.map((item) => item.source)],

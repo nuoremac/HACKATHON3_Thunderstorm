@@ -1,11 +1,13 @@
 import { buildAdminAnalytics } from "@/lib/admin-service";
-import { ok, serverError } from "@/lib/http";
+import { handleRouteError, ok } from "@/lib/http";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const analytics = await buildAdminAnalytics();
     return ok(analytics);
   } catch (error) {
-    return serverError("Failed to load admin analytics", String(error));
+    return handleRouteError(error, "impossible de charger les analytics", "ADMIN_ANALYTICS_FAILED");
   }
 }

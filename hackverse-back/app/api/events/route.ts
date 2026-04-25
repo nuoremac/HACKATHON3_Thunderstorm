@@ -1,31 +1,33 @@
-import { createEvent, listEvents } from "@/lib/db";
-import { badRequest, created, ok, parseJson, serverError } from "@/lib/http";
-import type { Event } from "@/lib/types";
+import { createEvent, getAssociationById, listEvents } from "@/lib/db";
+import { assertExists, handleRouteError, ok, parseBody, requireObject } from "@/lib/http";
+import { sanitizeEventPayload } from "@/lib/validators";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const events = await listEvents();
-    return ok({ data: events });
+    return ok(events);
   } catch (error) {
-    return serverError("Failed to fetch events", String(error));
+    return handleRouteError(error, "impossible de recuperer les evenements", "EVENT_LIST_FAILED");
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const payload = await parseJson<Partial<Event>>(request);
-    if (!payload.title || !payload.association_id || !payload.start_time || !payload.end_time) {
-      return badRequest("title, association_id, start_time, and end_time are required");
-    }
+    const payload = requireObject(await parseBody<Record<string, unknown>>(request));
+    const sanitized = sanitizeEventPayload(payload);
 
-    const event = await createEvent({
-      ...payload,
-      tags: payload.tags ?? [],
-      verification_status: payload.verification_status ?? "pending"
-    });
+    await assertExists(
+      await getAssociationById(sanitized.association_id as string),
+      "association inexistante",
+      "ASSOCIATION_NOT_FOUND",
+      400
+    );
 
-    return created({ data: event });
+    const event = await createEvent(sanitized);
+    return ok(event, { status: 201 });
   } catch (error) {
-    return serverError("Failed to create event", String(error));
+    return handleRouteError(error, "impossible de creer l'evenement", "EVENT_CREATE_FAILED");
   }
 }

@@ -1,6 +1,8 @@
-import { swaggerDocument } from "@/docs/swagger";
-import { ok } from "@/lib/http";
+import { NextResponse } from "next/server";
+import { swaggerDocument } from "@/docs/swagger"; // adapte chemin réel
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return ok(swaggerDocument);
+  return NextResponse.json(swaggerDocument);
 }

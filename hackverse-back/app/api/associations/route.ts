@@ -1,31 +1,28 @@
 import { createAssociation, listAssociations } from "@/lib/db";
-import { badRequest, created, ok, parseJson, serverError } from "@/lib/http";
-import type { Association } from "@/lib/types";
+import { handleRouteError, ok, parseBody, requireObject } from "@/lib/http";
+import { sanitizeAssociationPayload } from "@/lib/validators";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     const associations = await listAssociations();
-    return ok({ data: associations });
+    return ok(associations);
   } catch (error) {
-    return serverError("Failed to fetch associations", String(error));
+    return handleRouteError(
+      error,
+      "impossible de recuperer les associations",
+      "ASSOCIATION_LIST_FAILED"
+    );
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const payload = await parseJson<Partial<Association>>(request);
-    if (!payload.name || !payload.description) {
-      return badRequest("name and description are required");
-    }
-
-    const association = await createAssociation({
-      ...payload,
-      tags: payload.tags ?? [],
-      recruitment_needs: payload.recruitment_needs ?? []
-    });
-
-    return created({ data: association });
+    const payload = requireObject(await parseBody<Record<string, unknown>>(request));
+    const association = await createAssociation(sanitizeAssociationPayload(payload));
+    return ok(association, { status: 201 });
   } catch (error) {
-    return serverError("Failed to create association", String(error));
+    return handleRouteError(error, "impossible de creer l'association", "ASSOCIATION_CREATE_FAILED");
   }
 }

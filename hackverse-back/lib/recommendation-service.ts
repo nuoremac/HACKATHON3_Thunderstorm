@@ -178,7 +178,6 @@ export async function generateRecommendations(studentId: string) {
       target_id: item.targetId,
       score: item.score,
       confidence: item.confidence,
-      recommendation_type: item.recommendationType,
       explanation: item.explanation
     })),
     finalRanked.map((item) =>
@@ -187,7 +186,6 @@ export async function generateRecommendations(studentId: string) {
         source: assumption.source,
         confidence: assumption.confidence,
         risk_level: assumption.risk_level,
-        confidence_impact: assumption.confidence_impact,
         is_user_confirmed: assumption.is_user_confirmed
       }))
     )

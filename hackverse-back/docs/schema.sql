@@ -12,27 +12,24 @@ create table if not exists students (
   availability jsonb not null default '[]'::jsonb,
   profile_links jsonb,
   privacy_level text not null default 'campus',
-  profile_completeness numeric not null default 0.0,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  profile_completeness numeric not null default 0,
+  created_at timestamptz not null default now()
 );
 
 create table if not exists associations (
   id uuid primary key default gen_random_uuid(),
   name text not null,
   description text not null,
-  mission text,
   tags text[] not null default '{}',
   contact text,
   recruitment_needs text[] not null default '{}',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timestamptz not null default now()
 );
 
 create table if not exists events (
   id uuid primary key default gen_random_uuid(),
-  title text not null,
   association_id uuid references associations(id) on delete cascade,
+  title text not null,
   description text not null default '',
   tags text[] not null default '{}',
   start_time timestamptz not null,
@@ -41,8 +38,7 @@ create table if not exists events (
   capacity integer,
   source text not null default 'unknown_source',
   verification_status text not null default 'pending',
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  created_at timestamptz not null default now()
 );
 
 create table if not exists timetable_slots (
@@ -54,6 +50,17 @@ create table if not exists timetable_slots (
   location text
 );
 
+create table if not exists recommendations (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references students(id) on delete cascade,
+  target_type text not null,
+  target_id uuid not null,
+  score numeric not null,
+  confidence numeric not null,
+  explanation jsonb not null,
+  created_at timestamptz not null default now()
+);
+
 create table if not exists help_requests (
   id uuid primary key default gen_random_uuid(),
   requester_id uuid not null references students(id) on delete cascade,
@@ -61,15 +68,11 @@ create table if not exists help_requests (
   skill text not null,
   message text not null,
   status text not null default 'open',
-  request_type text not null default 'ask_for_help',
-  scheduled_start timestamptz,
-  scheduled_end timestamptz,
   created_at timestamptz not null default now(),
-  completed_at timestamptz,
-  updated_at timestamptz not null default now()
+  completed_at timestamptz
 );
 
-create table if not exists feedback (
+create table if not exists feedbacks (
   id uuid primary key default gen_random_uuid(),
   request_id uuid not null references help_requests(id) on delete cascade,
   from_student_id uuid not null references students(id) on delete cascade,
@@ -86,9 +89,7 @@ create table if not exists impact_records (
   skill text not null,
   helped_count integer not null default 0,
   positive_feedback_count integer not null default 0,
-  confidence_score numeric not null default 0,
-  updated_at timestamptz not null default now(),
-  unique (student_id, skill)
+  confidence_score numeric not null default 0
 );
 
 create table if not exists data_sources (
@@ -111,18 +112,6 @@ create table if not exists student_signals (
   expires_at timestamptz
 );
 
-create table if not exists recommendations (
-  id uuid primary key default gen_random_uuid(),
-  student_id uuid not null references students(id) on delete cascade,
-  target_type text not null,
-  target_id uuid not null,
-  score numeric not null,
-  confidence numeric not null,
-  recommendation_type text not null,
-  explanation jsonb not null,
-  created_at timestamptz not null default now()
-);
-
 create table if not exists recommendation_assumptions (
   id uuid primary key default gen_random_uuid(),
   recommendation_id uuid not null references recommendations(id) on delete cascade,
@@ -130,7 +119,5 @@ create table if not exists recommendation_assumptions (
   source text not null,
   confidence numeric not null,
   risk_level text not null,
-  confidence_impact numeric not null default 0,
-  is_user_confirmed boolean not null default false,
-  created_at timestamptz not null default now()
+  is_user_confirmed boolean not null default false
 );

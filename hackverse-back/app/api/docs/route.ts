@@ -22,6 +22,8 @@ const html = `<!DOCTYPE html>
   </body>
 </html>`;
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   return new Response(html, {
     headers: {

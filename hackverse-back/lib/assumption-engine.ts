@@ -54,7 +54,7 @@ export function buildAssumptions(context: CandidateContext): RecommendationAssum
   if (targetType === "association") {
     pushAssumption(
       assumptions,
-      "Association relevance was inferred from overlaps between student interests and association mission tags.",
+      "Association relevance was inferred from overlaps between student interests, tags, and recruitment needs.",
       "association_tags",
       0.72,
       "medium",

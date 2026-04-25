@@ -6,6 +6,13 @@ export type HelpRequestStatus = "open" | "accepted" | "rejected" | "completed" |
 export type RiskLevel = "low" | "medium" | "high";
 export type RecommendationType = "student" | "association" | "event" | "help_opportunity";
 
+export interface AvailabilityWindow {
+  day?: string;
+  start: string;
+  end: string;
+  location?: string;
+}
+
 export interface Student {
   id: UUID;
   name: string;
@@ -20,32 +27,22 @@ export interface Student {
   privacy_level: PrivacyLevel;
   profile_completeness: number;
   created_at?: string;
-  updated_at?: string;
-}
-
-export interface AvailabilityWindow {
-  day?: string;
-  start: string;
-  end: string;
-  location?: string;
 }
 
 export interface Association {
   id: UUID;
   name: string;
   description: string;
-  mission?: string | null;
   tags: string[];
   contact: string | null;
   recruitment_needs: string[];
   created_at?: string;
-  updated_at?: string;
 }
 
 export interface Event {
   id: UUID;
-  title: string;
   association_id: UUID;
+  title: string;
   description: string;
   tags: string[];
   start_time: string;
@@ -55,7 +52,6 @@ export interface Event {
   source: string;
   verification_status: VerificationStatus;
   created_at?: string;
-  updated_at?: string;
 }
 
 export interface TimetableSlot {
@@ -67,6 +63,17 @@ export interface TimetableSlot {
   location: string | null;
 }
 
+export interface RecommendationRecord {
+  id: UUID;
+  student_id: UUID;
+  target_type: RecommendationType;
+  target_id: UUID;
+  score: number;
+  confidence: number;
+  explanation: RecommendationExplanation;
+  created_at?: string;
+}
+
 export interface HelpRequest {
   id: UUID;
   requester_id: UUID;
@@ -74,12 +81,8 @@ export interface HelpRequest {
   skill: string;
   message: string;
   status: HelpRequestStatus;
-  request_type?: string;
-  scheduled_start?: string | null;
-  scheduled_end?: string | null;
   created_at?: string;
   completed_at?: string | null;
-  updated_at?: string;
 }
 
 export interface Feedback {
@@ -100,7 +103,6 @@ export interface ImpactRecord {
   helped_count: number;
   positive_feedback_count: number;
   confidence_score: number;
-  updated_at?: string;
 }
 
 export interface DataSource {
@@ -123,18 +125,6 @@ export interface StudentSignal {
   expires_at?: string | null;
 }
 
-export interface RecommendationRecord {
-  id: UUID;
-  student_id: UUID;
-  target_type: RecommendationType;
-  target_id: UUID;
-  score: number;
-  confidence: number;
-  recommendation_type: string;
-  explanation: RecommendationExplanation;
-  created_at?: string;
-}
-
 export interface RecommendationAssumption {
   id: UUID;
   recommendation_id: UUID;
@@ -142,9 +132,7 @@ export interface RecommendationAssumption {
   source: string;
   confidence: number;
   risk_level: RiskLevel;
-  confidence_impact: number;
   is_user_confirmed: boolean;
-  created_at?: string;
 }
 
 export interface RecommendationExplanation {
@@ -170,6 +158,15 @@ export interface ScoreBreakdown {
   finalScore: number;
 }
 
+export interface RecommendationAssumptionInput {
+  assumption: string;
+  source: string;
+  confidence: number;
+  risk_level: RiskLevel;
+  confidence_impact: number;
+  is_user_confirmed: boolean;
+}
+
 export interface RecommendationOutput {
   targetType: RecommendationType;
   targetId: UUID;
@@ -180,15 +177,6 @@ export interface RecommendationOutput {
   assumptions: RecommendationAssumptionInput[];
   scoreBreakdown: ScoreBreakdown;
   target: Student | Association | Event | HelpRequest;
-}
-
-export interface RecommendationAssumptionInput {
-  assumption: string;
-  source: string;
-  confidence: number;
-  risk_level: RiskLevel;
-  confidence_impact: number;
-  is_user_confirmed: boolean;
 }
 
 export interface CandidateContext {
