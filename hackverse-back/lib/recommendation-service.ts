@@ -11,7 +11,14 @@ import {
   listTimetableSlots,
   replaceRecommendations
 } from "@/lib/db";
-import { buildRecommendation } from "@/lib/scoring-engine";
+import { classifyCandidateContext } from "@/lib/data-trust";
+import { featureFlags } from "@/lib/feature-flags";
+import { logStructuredError } from "@/lib/observability";
+import {
+  aggregateGlobalConfidence,
+  applyFallbackRecommendationMode,
+  buildRecommendation
+} from "@/lib/scoring-engine";
 import type {
   Association,
   CandidateContext,
@@ -67,7 +74,7 @@ function buildContext<T extends Student | Association | Event | HelpRequest>(
     dataSources: Awaited<ReturnType<typeof listDataSources>>;
   }
 ): CandidateContext {
-  return {
+  const context = {
     student,
     targetType,
     target,
@@ -81,119 +88,172 @@ function buildContext<T extends Student | Association | Event | HelpRequest>(
       (source) => source.entity_id === (target as { id: string }).id && source.entity_type === targetType
     )
   };
+
+  return {
+    ...context,
+    trustMetadata: classifyCandidateContext(context)
+  };
+}
+
+async function safeLoad<T>(label: string, loader: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await loader();
+  } catch (error) {
+    logStructuredError("recommendation_service_loader", error, { label });
+    return fallback;
+  }
 }
 
 export async function generateRecommendations(studentId: string) {
-  const student = await getStudentById(studentId);
-  if (!student) {
-    return null;
+  try {
+    const student = await getStudentById(studentId);
+    if (!student) {
+      return null;
+    }
+
+    const [students, associations, events, helpRequests, feedback, impactRecords, signals, timetableSlots, dataSources] =
+      await Promise.all([
+        safeLoad("students", () => listStudents(), []),
+        safeLoad("associations", () => listAssociations(), []),
+        safeLoad("events", () => listEvents(), []),
+        safeLoad("help_requests", () => listHelpRequests(), []),
+        safeLoad("feedback", () => listFeedback(), []),
+        safeLoad("impact_records", () => listImpactRecords(), []),
+        safeLoad("signals", () => listSignals(), []),
+        safeLoad("timetable_slots", () => listTimetableSlots(), []),
+        safeLoad("data_sources", () => listDataSources(), [])
+      ]);
+
+    const outputs: RecommendationOutput[] = [];
+    const sharedBag = {
+      feedback,
+      impactRecords,
+      signals,
+      timetableSlots,
+      dataSources
+    };
+
+    students
+      .filter((candidate) => candidate.id !== student.id)
+      .forEach((candidate) => {
+        outputs.push(buildRecommendation(buildContext(student, "student", candidate, sharedBag)));
+      });
+
+    associations.forEach((candidate) => {
+      outputs.push(buildRecommendation(buildContext(student, "association", candidate, sharedBag)));
+    });
+
+    events.forEach((candidate) => {
+      outputs.push(buildRecommendation(buildContext(student, "event", candidate, sharedBag)));
+    });
+
+    helpRequests
+      .filter((candidate) => candidate.status === "open" && candidate.requester_id !== student.id)
+      .forEach((candidate) => {
+        outputs.push(
+          buildRecommendation(buildContext(student, "help_opportunity", candidate, sharedBag))
+        );
+      });
+
+    const ranked = outputs.sort((left, right) => {
+      if (right.score === left.score) return right.confidence - left.confidence;
+      return right.score - left.score;
+    });
+
+    const confidenceBeforeFallback = aggregateGlobalConfidence(ranked);
+    const shouldUseFallback =
+      featureFlags.enableFallbackMode &&
+      confidenceBeforeFallback < featureFlags.fallbackConfidenceThreshold;
+
+    const fallbackAdjusted = shouldUseFallback
+      ? applyFallbackRecommendationMode(ranked)
+      : ranked;
+    const remixed = isNewStudentMode(student)
+      ? mixForNewStudentMode(fallbackAdjusted)
+      : fallbackAdjusted;
+    const finalRanked = remixed.map((item) => ({
+      ...item,
+      diagnostics: {
+        ...(item.diagnostics ?? { fallback_used: false }),
+        fallback_used: shouldUseFallback || item.diagnostics?.fallback_used === true,
+        global_confidence: confidenceBeforeFallback
+      }
+    }));
+
+    try {
+      const storedRecommendations = await replaceRecommendations(
+        studentId,
+        finalRanked.map((item) => ({
+          student_id: studentId,
+          target_type: item.targetType,
+          target_id: item.targetId,
+          score: item.score,
+          confidence: item.confidence,
+          explanation: item.explanation
+        })),
+        finalRanked.map((item) =>
+          item.assumptions.map((assumption) => ({
+            assumption: assumption.assumption,
+            source: assumption.source,
+            confidence: assumption.confidence,
+            risk_level: assumption.risk_level,
+            is_user_confirmed: assumption.is_user_confirmed
+          }))
+        )
+      );
+
+      finalRanked.forEach((item, index) => {
+        const recommendationId = storedRecommendations[index]?.id;
+        item.assumptions = item.assumptions.map((assumption) => ({
+          ...assumption,
+          linked_recommendation_id: recommendationId
+        }));
+      });
+    } catch (error) {
+      logStructuredError("recommendation_persistence", error, { studentId });
+      finalRanked.forEach((item) => {
+        item.diagnostics = {
+          ...(item.diagnostics ?? { fallback_used: false }),
+          error: {
+            success: false,
+            error_code: "RECOMMENDATION_PERSISTENCE_FAILED",
+            message: "Recommendations were generated but could not be persisted.",
+            fallback_used: true
+          }
+        };
+      });
+    }
+
+    return {
+      student,
+      generated_at: new Date().toISOString(),
+      recommendations: finalRanked,
+      diagnostics: {
+        fallback_used: shouldUseFallback,
+        global_confidence: confidenceBeforeFallback
+      }
+    };
+  } catch (error) {
+    logStructuredError("recommendation_service", error, { studentId });
+    const student = await safeLoad("student_lookup_fallback", () => getStudentById(studentId), null);
+    if (!student) {
+      return null;
+    }
+
+    return {
+      student,
+      generated_at: new Date().toISOString(),
+      recommendations: [],
+      diagnostics: {
+        fallback_used: true,
+        global_confidence: 0,
+        error: {
+          success: false,
+          error_code: "RECOMMENDATION_SERVICE_FAILED",
+          message: "Recommendations fell back to an empty safe response.",
+          fallback_used: true
+        }
+      }
+    };
   }
-
-  const [students, associations, events, helpRequests, feedback, impactRecords, signals, timetableSlots, dataSources] =
-    await Promise.all([
-      listStudents(),
-      listAssociations(),
-      listEvents(),
-      listHelpRequests(),
-      listFeedback(),
-      listImpactRecords(),
-      listSignals(),
-      listTimetableSlots(),
-      listDataSources()
-    ]);
-
-  const outputs: RecommendationOutput[] = [];
-
-  students
-    .filter((candidate) => candidate.id !== student.id)
-    .forEach((candidate) => {
-      outputs.push(
-        buildRecommendation(
-          buildContext(student, "student", candidate, {
-            feedback,
-            impactRecords,
-            signals,
-            timetableSlots,
-            dataSources
-          })
-        )
-      );
-    });
-
-  associations.forEach((candidate) => {
-    outputs.push(
-      buildRecommendation(
-        buildContext(student, "association", candidate, {
-          feedback,
-          impactRecords,
-          signals,
-          timetableSlots,
-          dataSources
-        })
-      )
-    );
-  });
-
-  events.forEach((candidate) => {
-    outputs.push(
-      buildRecommendation(
-        buildContext(student, "event", candidate, {
-          feedback,
-          impactRecords,
-          signals,
-          timetableSlots,
-          dataSources
-        })
-      )
-    );
-  });
-
-  helpRequests
-    .filter((candidate) => candidate.status === "open" && candidate.requester_id !== student.id)
-    .forEach((candidate) => {
-      outputs.push(
-        buildRecommendation(
-          buildContext(student, "help_opportunity", candidate, {
-            feedback,
-            impactRecords,
-            signals,
-            timetableSlots,
-            dataSources
-          })
-        )
-      );
-    });
-
-  const ranked = outputs.sort((left, right) => {
-    if (right.score === left.score) return right.confidence - left.confidence;
-    return right.score - left.score;
-  });
-  const finalRanked = isNewStudentMode(student) ? mixForNewStudentMode(ranked) : ranked;
-
-  await replaceRecommendations(
-    studentId,
-    finalRanked.map((item) => ({
-      student_id: studentId,
-      target_type: item.targetType,
-      target_id: item.targetId,
-      score: item.score,
-      confidence: item.confidence,
-      explanation: item.explanation
-    })),
-    finalRanked.map((item) =>
-      item.assumptions.map((assumption) => ({
-        assumption: assumption.assumption,
-        source: assumption.source,
-        confidence: assumption.confidence,
-        risk_level: assumption.risk_level,
-        is_user_confirmed: assumption.is_user_confirmed
-      }))
-    )
-  );
-
-  return {
-    student,
-    generated_at: new Date().toISOString(),
-    recommendations: finalRanked
-  };
 }

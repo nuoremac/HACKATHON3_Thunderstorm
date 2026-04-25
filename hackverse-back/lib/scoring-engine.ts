@@ -1,6 +1,9 @@
 import { assumptionRiskPenalty, buildAssumptions } from "@/lib/assumption-engine";
 import { computeConfidence } from "@/lib/confidence-engine";
+import { classifyCandidateContext, resolveConflict } from "@/lib/data-trust";
+import { featureFlags } from "@/lib/feature-flags";
 import { clamp } from "@/lib/http";
+import { createStructuredFallbackError, logStructuredError } from "@/lib/observability";
 import type {
   Association,
   CandidateContext,
@@ -228,8 +231,21 @@ function missingDataPenalty(student: Student) {
   return (missing / importantFields.length) * 0.15;
 }
 
+function trustScore(context: CandidateContext) {
+  const summary = context.trustMetadata ?? classifyCandidateContext(context);
+  return clamp(
+    summary.ratios.validated_ratio +
+      0.6 * summary.ratios.inferred_ratio +
+      0.3 * summary.ratios.uncertain_ratio -
+      0.5 * summary.ratios.contradictory_ratio -
+      0.6 * summary.ratios.missing_ratio,
+    0,
+    1
+  );
+}
+
 function conflictPenalty(context: CandidateContext) {
-  const { student, sources, targetType, target, timetableSlots } = context;
+  const { student, sources, targetType, target, timetableSlots, trustMetadata } = context;
   let penalty = 0;
 
   if (targetType === "event") {
@@ -252,6 +268,9 @@ function conflictPenalty(context: CandidateContext) {
     if (hasConflict) penalty += 0.1;
   }
 
+  if (trustMetadata?.conflict_flag) penalty += 0.05;
+  penalty += (trustMetadata?.ratios.contradictory_ratio ?? 0) * 0.08;
+
   return clamp(penalty, 0, 0.2);
 }
 
@@ -262,88 +281,246 @@ function recommendationTypeForTarget(targetType: RecommendationType) {
   return "help_match";
 }
 
+function applySafetyClamp(weightedScore: number) {
+  return Math.min(weightedScore, 0.35);
+}
+
+export function aggregateGlobalConfidence(outputs: RecommendationOutput[]) {
+  if (!outputs.length) return 0;
+  return outputs.reduce((sum, item) => sum + item.confidence, 0) / outputs.length;
+}
+
+export function applyFallbackRecommendationMode(outputs: RecommendationOutput[]) {
+  try {
+    const buckets = new Map<RecommendationType, RecommendationOutput[]>();
+    outputs.forEach((output) => {
+      const next = buckets.get(output.targetType) ?? [];
+      const explorationBoost = output.scoreBreakdown.ExplorationScore * 0.2;
+      next.push({
+        ...output,
+        score: clamp(output.score * 0.82 + explorationBoost),
+        confidence: clamp(output.confidence * 0.92),
+        explanation: {
+          ...output.explanation,
+          why_now: [
+            ...output.explanation.why_now,
+            "Recommendation confidence is lower than usual, so this result is intentionally broader and more cautious."
+          ]
+        },
+        diagnostics: {
+          ...(output.diagnostics ?? { fallback_used: false }),
+          fallback_used: true
+        }
+      });
+      buckets.set(output.targetType, next);
+    });
+
+    const orderedTypes: RecommendationType[] = [
+      "event",
+      "association",
+      "student",
+      "help_opportunity"
+    ];
+
+    const diversified: RecommendationOutput[] = [];
+    orderedTypes.forEach((type) => {
+      const bucket = (buckets.get(type) ?? []).sort(
+        (left, right) =>
+          right.scoreBreakdown.ExplorationScore - left.scoreBreakdown.ExplorationScore
+      );
+      if (bucket.length) diversified.push(bucket[0]);
+    });
+
+    const remaining = orderedTypes.flatMap((type) =>
+      (buckets.get(type) ?? []).filter((item) => !diversified.includes(item))
+    );
+
+    return [...diversified, ...remaining];
+  } catch (error) {
+    logStructuredError("fallback_recommendation_mode", error);
+    return outputs.map((output) => ({
+      ...output,
+      diagnostics: {
+        ...(output.diagnostics ?? { fallback_used: false }),
+        fallback_used: true,
+        error: createStructuredFallbackError(
+          "FALLBACK_MODE_ERROR",
+          "Fallback recommendation mode encountered an error."
+        )
+      }
+    }));
+  }
+}
+
 export function buildRecommendation(context: CandidateContext): RecommendationOutput {
-  const { student, targetType, target, sources, relevantSignals } = context;
+  try {
+    const trustMetadata = context.trustMetadata ?? classifyCandidateContext(context);
+    const enrichedContext = {
+      ...context,
+      trustMetadata
+    };
+    const { student, targetType, target, sources, relevantSignals, timetableSlots } = enrichedContext;
 
-  const interestComparable =
-    targetType === "student"
-      ? (target as Student).interests
-      : targetType === "association"
-        ? (target as Association).tags
-        : targetType === "event"
-          ? (target as Event).tags
-          : [(target as HelpRequest).skill];
+    const interestComparable =
+      targetType === "student"
+        ? (target as Student).interests
+        : targetType === "association"
+          ? (target as Association).tags
+          : targetType === "event"
+            ? (target as Event).tags
+            : [(target as HelpRequest).skill];
 
-  const assumptions = buildAssumptions(context);
-  const assumptionRisk = assumptionRiskPenalty(assumptions);
-  const freshness = freshnessScore([
-    ...sources.map((item) => item.last_updated),
-    ...(target as { created_at?: string }).created_at
-      ? [(target as { created_at?: string }).created_at as string]
-      : [],
-    ...(student.created_at ? [student.created_at] : [])
-  ]);
-  const reliability = sourceReliabilityScore(
-    [...sources.map((item) => item.source_type), ...relevantSignals.map((item) => item.source)],
-    sources.map((item) => item.reliability_score)
-  );
-  const conflict = conflictPenalty(context);
-  const breakdown: ScoreBreakdown = {
-    InterestScore: jaccardScore(student.interests, interestComparable),
-    SkillScore: skillScore(student, targetType, target),
-    AvailabilityScore: availabilityScore(context),
-    AcademicContextScore: academicContextScore(student, targetType, target),
-    LocationScore: locationScore(context),
-    SocialProofScore: socialProofScore(context),
-    FreshnessScore: freshness,
-    SourceReliabilityScore: reliability,
-    ExplorationScore: explorationScore(student, targetType, target),
-    MissingDataPenalty: missingDataPenalty(student),
-    ConflictPenalty: conflict,
-    AssumptionRiskPenalty: assumptionRisk,
-    finalScore: 0
-  };
+    const assumptions = buildAssumptions(enrichedContext);
+    const assumptionRisk = assumptionRiskPenalty(assumptions);
+    const freshness = freshnessScore([
+      ...sources.map((item) => item.last_updated),
+      ...(target as { created_at?: string }).created_at
+        ? [(target as { created_at?: string }).created_at as string]
+        : [],
+      ...(student.created_at ? [student.created_at] : [])
+    ]);
+    const reliability = sourceReliabilityScore(
+      [...sources.map((item) => item.source_type), ...relevantSignals.map((item) => item.source)],
+      sources.map((item) => item.reliability_score)
+    );
 
-  const signalContributions = Object.entries(WEIGHTS).map(([key, weight]) => {
-    const raw = breakdown[key as keyof typeof WEIGHTS];
-    return Math.min(raw * weight, 0.35);
-  });
+    let resolvedConflictPenalty = 0;
+    if (featureFlags.enableConflictResolution && student.availability.length && timetableSlots.length) {
+      const firstWindow = student.availability[0];
+      const firstSlot = timetableSlots[0];
+      const conflict = resolveConflict({
+        key: "availability_vs_timetable",
+        primary: {
+          start: firstWindow.start,
+          end: firstWindow.end
+        },
+        secondary: {
+          start: firstSlot.start_time,
+          end: firstSlot.end_time
+        },
+        primaryReliability: 0.6,
+        secondaryReliability: 0.85
+      });
+      resolvedConflictPenalty = conflict.confidencePenalty;
+    }
 
-  const positiveScore = signalContributions.reduce((sum, value) => sum + value, 0);
-  const finalScore = clamp(
-    positiveScore -
-      breakdown.MissingDataPenalty -
-      breakdown.ConflictPenalty -
-      breakdown.AssumptionRiskPenalty
-  );
-  breakdown.finalScore = finalScore;
+    const breakdown: ScoreBreakdown = {
+      InterestScore: jaccardScore(student.interests, interestComparable),
+      SkillScore: skillScore(student, targetType, target),
+      AvailabilityScore: availabilityScore(enrichedContext),
+      AcademicContextScore: academicContextScore(student, targetType, target),
+      LocationScore: locationScore(enrichedContext),
+      SocialProofScore: socialProofScore(enrichedContext),
+      FreshnessScore: freshness,
+      SourceReliabilityScore: reliability,
+      ExplorationScore: explorationScore(student, targetType, target),
+      MissingDataPenalty: clamp(
+        missingDataPenalty(student) + trustMetadata.ratios.missing_ratio * 0.1,
+        0,
+        0.2
+      ),
+      ConflictPenalty: clamp(conflictPenalty(enrichedContext) + resolvedConflictPenalty, 0, 0.25),
+      AssumptionRiskPenalty: assumptionRisk,
+      finalScore: 0
+    };
 
-  const confidence = computeConfidence({
-    sourceReliabilityScore: reliability,
-    profileCompleteness: student.profile_completeness,
-    freshnessScore: freshness,
-    conflictPenalty: conflict,
-    confidenceImpactFromAssumptions: assumptions.reduce(
-      (sum, item) => sum + item.confidence_impact,
-      0
-    )
-  });
+    const weights = WEIGHTS;
+    const signalContributions = Object.entries(weights).map(([key, weight]) => {
+      const raw = breakdown[key as keyof typeof weights];
+      return applySafetyClamp(raw * weight);
+    });
 
-  const explanation = buildExplanation(
-    context,
-    breakdown,
-    assumptions.map((item) => item.assumption)
-  );
+    const positiveScore = signalContributions.reduce((sum, value) => sum + value, 0);
+    const finalScore = clamp(
+      positiveScore -
+        breakdown.MissingDataPenalty -
+        breakdown.ConflictPenalty -
+        breakdown.AssumptionRiskPenalty
+    );
+    breakdown.finalScore = finalScore;
 
-  return {
-    targetType,
-    targetId: (target as { id: string }).id,
-    recommendationType: recommendationTypeForTarget(targetType),
-    score: finalScore,
-    confidence,
-    explanation,
-    assumptions,
-    scoreBreakdown: breakdown,
-    target
-  };
+    const confidence = computeConfidence({
+      sourceReliabilityScore: reliability,
+      profileCompleteness: student.profile_completeness,
+      freshnessScore: freshness,
+      conflictPenalty: breakdown.ConflictPenalty,
+      confidenceImpactFromAssumptions: assumptions.reduce(
+        (sum, item) => sum + item.confidence_delta,
+        0
+      ),
+      trustScore: trustScore(enrichedContext)
+    });
+
+    const explanation = buildExplanation(
+      enrichedContext,
+      breakdown,
+      assumptions.map((item) => item.assumption)
+    );
+
+    return {
+      targetType,
+      targetId: (target as { id: string }).id,
+      recommendationType: recommendationTypeForTarget(targetType),
+      score: finalScore,
+      confidence,
+      explanation,
+      assumptions,
+      scoreBreakdown: breakdown,
+      target,
+      trustMetadata,
+      conflict_flag: trustMetadata.conflict_flag,
+      diagnostics: {
+        fallback_used: false
+      }
+    };
+  } catch (error) {
+    logStructuredError("scoring_engine", error, {
+      targetType: context.targetType,
+      targetId: (context.target as { id?: string }).id
+    });
+
+    const fallbackBreakdown: ScoreBreakdown = {
+      InterestScore: 0,
+      SkillScore: 0,
+      AvailabilityScore: 0.35,
+      AcademicContextScore: 0,
+      LocationScore: 0,
+      SocialProofScore: 0.5,
+      FreshnessScore: 0.1,
+      SourceReliabilityScore: 0.2,
+      ExplorationScore: 0.8,
+      MissingDataPenalty: 0.1,
+      ConflictPenalty: 0,
+      AssumptionRiskPenalty: 0,
+      finalScore: 0.18
+    };
+
+    return {
+      targetType: context.targetType,
+      targetId: (context.target as { id: string }).id,
+      recommendationType: recommendationTypeForTarget(context.targetType),
+      score: fallbackBreakdown.finalScore,
+      confidence: 0.35,
+      explanation: {
+        why_this_recommendation: [
+          "This recommendation was generated in degraded mode because some scoring inputs were unavailable."
+        ],
+        why_now: ["The system returned a safe fallback result instead of failing."],
+        data_used: ["limited available profile data"],
+        assumptions_used: []
+      },
+      assumptions: [],
+      scoreBreakdown: fallbackBreakdown,
+      target: context.target,
+      trustMetadata: context.trustMetadata,
+      conflict_flag: false,
+      diagnostics: {
+        fallback_used: true,
+        error: createStructuredFallbackError(
+          "SCORING_ENGINE_ERROR",
+          "Scoring engine returned a degraded recommendation."
+        )
+      }
+    };
+  }
 }

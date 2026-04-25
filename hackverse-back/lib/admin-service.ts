@@ -1,3 +1,4 @@
+import { buildQualityMetrics } from "@/lib/data-trust";
 import {
   listAssociations,
   listEvents,
@@ -102,4 +103,20 @@ export async function buildAdminAnalytics() {
       ]
     }
   };
+}
+
+export async function buildAdminQualityMetrics() {
+  const [students, associations, events, helpRequests] = await Promise.all([
+    listStudents(),
+    listAssociations(),
+    listEvents(),
+    listHelpRequests()
+  ]);
+
+  return buildQualityMetrics({
+    students,
+    associations,
+    events,
+    helpRequests
+  });
 }

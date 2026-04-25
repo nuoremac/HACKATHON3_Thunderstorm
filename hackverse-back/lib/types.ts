@@ -5,6 +5,12 @@ export type VerificationStatus = "verified" | "pending" | "unverified";
 export type HelpRequestStatus = "open" | "accepted" | "rejected" | "completed" | "rescheduled";
 export type RiskLevel = "low" | "medium" | "high";
 export type RecommendationType = "student" | "association" | "event" | "help_opportunity";
+export type DataTrustLevel =
+  | "VALIDATED"
+  | "UNCERTAIN"
+  | "CONTRADICTORY"
+  | "INFERRED"
+  | "MISSING";
 
 export interface AvailabilityWindow {
   day?: string;
@@ -133,6 +139,10 @@ export interface RecommendationAssumption {
   confidence: number;
   risk_level: RiskLevel;
   is_user_confirmed: boolean;
+  impact_on_score?: number;
+  risk_if_wrong?: RiskLevel;
+  confidence_delta?: number;
+  linked_recommendation_id?: UUID;
 }
 
 export interface RecommendationExplanation {
@@ -165,6 +175,46 @@ export interface RecommendationAssumptionInput {
   risk_level: RiskLevel;
   confidence_impact: number;
   is_user_confirmed: boolean;
+  impact_on_score: number;
+  risk_if_wrong: RiskLevel;
+  confidence_delta: number;
+  linked_recommendation_id?: UUID;
+}
+
+export interface TrustAnnotatedDatum<T> {
+  key: string;
+  value: T;
+  trustLevel: DataTrustLevel;
+  conflict_flag: boolean;
+  metadata: Record<string, unknown>;
+}
+
+export interface TrustMetrics {
+  validated_ratio: number;
+  uncertain_ratio: number;
+  contradictory_ratio: number;
+  inferred_ratio: number;
+  missing_ratio: number;
+}
+
+export interface TrustSummary {
+  annotations: TrustAnnotatedDatum<unknown>[];
+  counts: Record<DataTrustLevel, number>;
+  ratios: TrustMetrics;
+  conflict_flag: boolean;
+}
+
+export interface RecommendationTrustMetadata extends TrustSummary {}
+
+export interface RecommendationDiagnostics {
+  fallback_used: boolean;
+  global_confidence?: number;
+  error?: {
+    success: false;
+    error_code: string;
+    message: string;
+    fallback_used: boolean;
+  };
 }
 
 export interface RecommendationOutput {
@@ -177,6 +227,9 @@ export interface RecommendationOutput {
   assumptions: RecommendationAssumptionInput[];
   scoreBreakdown: ScoreBreakdown;
   target: Student | Association | Event | HelpRequest;
+  trustMetadata?: RecommendationTrustMetadata;
+  conflict_flag?: boolean;
+  diagnostics?: RecommendationDiagnostics;
 }
 
 export interface CandidateContext {
@@ -188,4 +241,5 @@ export interface CandidateContext {
   feedback: Feedback[];
   relevantSignals: StudentSignal[];
   impactRecords: ImpactRecord[];
+  trustMetadata?: RecommendationTrustMetadata;
 }

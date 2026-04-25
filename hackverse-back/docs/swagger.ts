@@ -314,6 +314,17 @@ const analyticsSchema = {
   }
 };
 
+const qualityMetricsSchema = {
+  type: "object",
+  properties: {
+    validated_ratio: { type: "number", example: 0.42 },
+    uncertain_ratio: { type: "number", example: 0.18 },
+    contradictory_ratio: { type: "number", example: 0.07 },
+    inferred_ratio: { type: "number", example: 0.21 },
+    missing_ratio: { type: "number", example: 0.12 }
+  }
+};
+
 export const swaggerDocument = {
   openapi: "3.0.0",
   info: {
@@ -662,6 +673,18 @@ export const swaggerDocument = {
           "200": successResponse({ $ref: "#/components/schemas/Analytics" }, "Analytics fetched")
         }
       }
+    },
+    "/api/admin/quality": {
+      get: {
+        tags: ["Admin"],
+        summary: "Get data quality trust metrics",
+        responses: {
+          "200": successResponse(
+            { $ref: "#/components/schemas/QualityMetrics" },
+            "Quality metrics fetched"
+          )
+        }
+      }
     }
   },
   components: {
@@ -704,6 +727,7 @@ export const swaggerDocument = {
       },
       Recommendation: recommendationSchema,
       Analytics: analyticsSchema,
+      QualityMetrics: qualityMetricsSchema,
       ApiError: errorSchema
     }
   }
