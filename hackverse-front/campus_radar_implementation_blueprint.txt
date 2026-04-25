@@ -1,0 +1,1075 @@
+PROJECT IMPLEMENTATION BLUEPRINT
+Campus Radar
+
+============================================================
+1. PRODUCT VISION
+============================================================
+
+Campus Radar is a contextual connection engine for university life.
+
+The goal is not to create another social network. The goal is to help students discover the right people, associations, events, mentors, and help opportunities at the right moment, even when profiles are incomplete.
+
+The product solves two connected problems:
+
+1. Students do not know who around them shares their interests, skills, availability, or academic goals.
+2. Skilled students, especially quiet or highly focused students, often help others or have strong abilities, but their impact remains invisible.
+
+Campus Radar turns weak campus data into useful connection moments and transforms student help into proof of impact.
+
+
+============================================================
+2. CORE PRODUCT IDEA
+============================================================
+
+The app recommends:
+
+- students to meet;
+- events to attend;
+- associations to discover;
+- students who can help with a skill;
+- students who need help with a skill;
+- study groups or project partners;
+- connection moments based on timetable and availability.
+
+Every recommendation must answer:
+
+- Why this person?
+- Why this event?
+- Why now?
+- What data was used?
+- How confident is the system?
+
+
+============================================================
+3. MAIN USERS
+============================================================
+
+3.1 Student
+
+The student wants to:
+
+- find relevant people;
+- discover events and associations;
+- ask for help;
+- offer help;
+- build a proof of impact;
+- optionally show LinkedIn, GitHub, portfolio, CV, or other external links.
+
+3.2 Association Leader
+
+The association leader wants to:
+
+- publish events;
+- recruit relevant students;
+- understand who may be interested;
+- increase attendance;
+- avoid communicating only to already-known members.
+
+3.3 Campus Administrator
+
+The administrator wants to:
+
+- detect isolated student groups;
+- detect invisible events;
+- see engagement gaps;
+- understand which associations are active;
+- monitor adoption and impact.
+
+3.4 Alumni / Professional
+
+The alumni or professional helps with adoption by explaining the professional value of mentorship, leadership, knowledge transmission, and helping others.
+
+
+============================================================
+4. KEY DIFFERENTIATOR: IMPACT PROFILE
+============================================================
+
+The Impact Profile is the feature that makes the product stronger than a simple event app.
+
+It allows students to build proof that they can help, guide, explain, mentor, and transmit knowledge.
+
+Example:
+
+Student: Raoul
+Skills:
+- Mathematics
+- Physics
+- React
+- AI
+- Internship search
+
+Impact:
+- 12 students helped in mathematics
+- 5 students helped in React
+- 3 students helped with internship search
+- 92% positive feedback
+
+Important principle:
+The app should not force students to become influencers. It should allow quiet students to build a discreet, credible proof of impact.
+
+Professional skills demonstrated:
+
+- mentorship;
+- leadership;
+- technical communication;
+- collaboration;
+- ability to explain complex topics;
+- ability to help a group progress;
+- community impact.
+
+
+============================================================
+5. SHOULD WE INCLUDE A CHAT?
+============================================================
+
+Recommendation: Do not build a generic social-media chat as a core feature.
+
+Reason:
+Most social media apps already have chat. If we build just another chat, the product becomes ordinary and the jury may see it as a weak social network clone.
+
+Better approach:
+Build a contextual request system first.
+
+Instead of:
+"Hello, can we talk?"
+
+The app should generate structured requests like:
+
+- "I need help with linear algebra."
+- "I want to join a cybersecurity study group."
+- "I am looking for a React teammate for a project."
+- "I want feedback on my CV."
+- "I want to attend this event with people from my field."
+
+This can later open a small conversation, but the conversation must start from a clear context.
+
+MVP decision:
+
+- Include a lightweight message/request feature.
+- Do not build a full chat system.
+- Use predefined actions: Ask for help, Offer help, Join group, Attend event, Contact association.
+- If time remains, add a simple message thread after a request is accepted.
+
+Name of the feature:
+Contextual Requests.
+
+
+============================================================
+6. PRODUCT MODULES
+============================================================
+
+6.1 Landing Page
+
+Purpose:
+Explain the product quickly to the jury.
+
+Must include:
+
+- problem statement;
+- product vision;
+- key features;
+- why it is not another social network;
+- 90-day adoption plan;
+- demo access buttons.
+
+6.2 Student Dashboard
+
+Purpose:
+Main screen for students.
+
+Must include:
+
+- recommended people;
+- recommended events;
+- recommended associations;
+- help requests;
+- impact profile preview;
+- free-time connection moments.
+
+Example card:
+
+"You have 45 minutes free. 6 students from your department are also free. The AI Club has an event nearby. Suggested action: join the event or create a micro-group."
+
+6.3 Recommendation Engine
+
+Purpose:
+Rank people, events, associations, and help opportunities.
+
+Inputs:
+
+- interests;
+- skills;
+- filiere / department;
+- academic year;
+- timetable;
+- availability;
+- event tags;
+- association tags;
+- previous help interactions;
+- positive feedback;
+- profile completeness;
+- source reliability.
+
+Outputs:
+
+- recommendation score;
+- confidence level;
+- explanation;
+- action button.
+
+6.4 Explanation Engine
+
+Purpose:
+Show why the recommendation exists.
+
+Example:
+
+"Recommended because:
+- You are interested in AI.
+- You are free from 13:00 to 14:00.
+- The event starts at 13:15.
+- 8 students from your year are also interested.
+- The source is verified by the association."
+
+6.5 Impact Profile
+
+Purpose:
+Show proof of helpfulness and mentorship.
+
+Must include:
+
+- skills offered;
+- number of students helped;
+- verified positive feedback;
+- badges;
+- optional external links;
+- privacy control.
+
+Possible badges:
+
+- Math Helper
+- React Mentor
+- CV Reviewer
+- Association Builder
+- Project Teammate
+- First-Year Guide
+
+6.6 Events Module
+
+Purpose:
+Show events ranked by relevance, not just date.
+
+Must include:
+
+- title;
+- association;
+- date/time;
+- location;
+- tags;
+- capacity;
+- relevance score;
+- explanation;
+- button: Interested / Attend / Share.
+
+6.7 Associations Module
+
+Purpose:
+Help students discover associations.
+
+Must include:
+
+- association profile;
+- mission;
+- tags;
+- upcoming events;
+- relevant students;
+- recruitment needs.
+
+6.8 Admin Dashboard
+
+Purpose:
+Show global campus insights.
+
+Must include:
+
+- engagement by department;
+- invisible events;
+- isolated groups;
+- most requested skills;
+- most active associations;
+- adoption metrics;
+- data quality warnings.
+
+6.9 Association Dashboard
+
+Purpose:
+Allow associations to manage events and reach relevant students.
+
+Must include:
+
+- create event;
+- event analytics;
+- recommended target audience;
+- student interest signals;
+- recruitment status.
+
+6.10 Contextual Requests
+
+Purpose:
+Replace generic chat with useful structured interaction.
+
+Request types:
+
+- Ask for help;
+- Offer help;
+- Join event together;
+- Create study group;
+- Contact association;
+- Find project teammate.
+
+Flow:
+
+1. Student sees a recommendation.
+2. Student clicks a contextual action.
+3. The app creates a structured request.
+4. The receiver accepts, rejects, or proposes another time.
+5. After completion, both users can leave feedback.
+6. Positive feedback updates the Impact Profile.
+
+
+============================================================
+7. TECHNOLOGY STACK
+============================================================
+
+Recommended stack for a 24h hackathon:
+
+Frontend:
+- Next.js
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+
+Backend:
+- Next.js API routes for speed
+- Optional alternative: NestJS if the team wants a separate backend
+
+Database:
+- SQLite for fastest local MVP
+- PostgreSQL for production/demo deployment
+
+ORM:
+- Prisma
+
+Data import:
+- PapaParse for CSV files
+- node-ical or ical.js for .ics timetable files
+- JSON import for associations and events
+
+Charts:
+- Recharts
+
+Authentication:
+- Demo auth for MVP
+- NextAuth.js only if time allows
+
+Deployment:
+- Vercel for the app
+- Supabase or Neon for PostgreSQL if deployed with real database
+
+Design:
+- Tailwind CSS variables
+- clean dashboard UI
+- bold landing page
+- card-based recommendation system
+
+
+============================================================
+8. DATA MODEL
+============================================================
+
+Main entities:
+
+Student:
+- id
+- name
+- email
+- department
+- academic_year
+- interests
+- skills_offered
+- skills_needed
+- availability
+- profile_links
+- privacy_level
+- profile_completeness
+
+Association:
+- id
+- name
+- description
+- tags
+- contact
+- recruitment_needs
+
+Event:
+- id
+- title
+- association_id
+- description
+- tags
+- start_time
+- end_time
+- location
+- capacity
+- source
+- verification_status
+
+TimetableSlot:
+- id
+- student_id
+- course_name
+- start_time
+- end_time
+- location
+
+Recommendation:
+- id
+- student_id
+- target_type
+- target_id
+- score
+- confidence
+- explanation
+- created_at
+
+HelpRequest:
+- id
+- requester_id
+- helper_id
+- skill
+- message
+- status
+- created_at
+- completed_at
+
+Feedback:
+- id
+- request_id
+- from_student_id
+- to_student_id
+- rating
+- comment
+- skill_confirmed
+
+ImpactRecord:
+- id
+- student_id
+- skill
+- helped_count
+- positive_feedback_count
+- confidence_score
+
+DataSource:
+- id
+- entity_type
+- entity_id
+- source_type
+- reliability_score
+- last_updated
+
+StudentSignal:
+- id
+- student_id
+- signal_type
+- value
+- source
+- confidence
+- created_at
+- expires_at
+
+RecommendationAssumption:
+- id
+- recommendation_id
+- assumption
+- source
+- confidence
+- risk_level
+- is_user_confirmed
+
+Why this matters:
+The system must not treat first-day data as permanent truth. For new students, every profile field, interest, skill, and availability slot should be treated as a signal with a source, confidence level, and expiration date.
+
+
+============================================================
+9. MATHEMATICAL MODEL
+============================================================
+
+The matching engine can use a weighted scoring model.
+
+FinalScore(student, target) =
+  w1 * InterestScore
++ w2 * SkillScore
++ w3 * AvailabilityScore
++ w4 * AcademicContextScore
++ w5 * LocationScore
++ w6 * SocialProofScore
++ w7 * FreshnessScore
++ w8 * SourceReliabilityScore
++ w9 * ExplorationScore
+- p1 * MissingDataPenalty
+- p2 * ConflictPenalty
+- p3 * AssumptionRiskPenalty
+
+Recommended initial weights:
+
+- InterestScore: 0.25
+- SkillScore: 0.20
+- AvailabilityScore: 0.20
+- AcademicContextScore: 0.10
+- LocationScore: 0.10
+- SocialProofScore: 0.05
+- FreshnessScore: 0.03
+- SourceReliabilityScore: 0.05
+- ExplorationScore: 0.02
+
+Total positive weights = 1.00
+
+9.1 InterestScore
+
+Measures overlap between student interests and target tags.
+
+Formula:
+
+InterestScore = common_tags / total_unique_tags
+
+Example:
+
+Student interests: AI, Robotics, Startups
+Event tags: AI, Machine Learning, Projects
+
+Common tags = 1
+Total unique tags = 5
+InterestScore = 1 / 5 = 0.20
+
+9.2 SkillScore
+
+Used for help and mentorship.
+
+For a helper:
+
+SkillScore =
+  1.0 if exact skill match
+  0.7 if related skill match
+  0.3 if same field
+  0.0 if unrelated
+
+Example:
+
+Needed skill: React
+Helper skills: React, TypeScript, UI Design
+SkillScore = 1.0
+
+9.3 AvailabilityScore
+
+Measures whether the student and target can interact at the same time.
+
+Formula:
+
+AvailabilityScore = overlap_minutes / required_minutes
+
+If overlap is greater than required time, cap at 1.0.
+
+Example:
+
+Student free: 12:00-13:00
+Event: 12:30-13:00
+Required time: 30 min
+Overlap: 30 min
+AvailabilityScore = 1.0
+
+9.4 AcademicContextScore
+
+Measures academic relevance.
+
+Suggested values:
+
+- same department and same year: 1.0
+- same department, different year: 0.8
+- related department: 0.6
+- different department but same interest: 0.4
+- unrelated: 0.0
+
+9.5 LocationScore
+
+Measures physical convenience.
+
+Suggested values:
+
+- same building: 1.0
+- nearby building: 0.7
+- same campus: 0.4
+- unknown location: 0.2
+- far location: 0.0
+
+9.6 SocialProofScore
+
+Measures proof that a student, event, or association is useful.
+
+For a helper:
+
+SocialProofScore = positive_feedback_count / total_feedback_count
+
+If no feedback exists:
+SocialProofScore = 0.5
+
+This avoids punishing new users too strongly.
+
+9.7 FreshnessScore
+
+Measures whether information is recent.
+
+Suggested values:
+
+- updated less than 7 days ago: 1.0
+- updated less than 30 days ago: 0.7
+- updated less than 90 days ago: 0.4
+- older than 90 days: 0.1
+
+9.8 SourceReliabilityScore
+
+Suggested values:
+
+- official association/admin source: 1.0
+- imported timetable: 0.8
+- student declared data: 0.7
+- inferred data: 0.5
+- unknown source: 0.2
+
+9.9 MissingDataPenalty
+
+The system must work with incomplete profiles, so missing data should reduce confidence but not block recommendations.
+
+Suggested formula:
+
+MissingDataPenalty = missing_important_fields / total_important_fields * 0.15
+
+9.10 ConflictPenalty
+
+Used when data is duplicated, contradictory, or outdated.
+
+Examples:
+
+- same event appears twice with different times;
+- student timetable conflicts with declared availability;
+- association event has no verified source.
+
+Suggested values:
+
+- no conflict: 0.0
+- small conflict: 0.05
+- medium conflict: 0.10
+- major conflict: 0.20
+
+9.11 Confidence
+
+Confidence is different from recommendation score.
+
+Score answers:
+"How relevant is this?"
+
+Confidence answers:
+"How much do we trust the data behind this?"
+
+Formula:
+
+Confidence =
+  0.4 * SourceReliabilityScore
++ 0.3 * ProfileCompleteness
++ 0.2 * FreshnessScore
++ 0.1 * NoConflictScore
+
+NoConflictScore:
+- 1.0 if no conflict
+- 0.5 if minor conflict
+- 0.0 if major conflict
+
+9.12 ExplorationScore
+
+This score exists because new students should not be locked inside the first assumptions the system made about them.
+
+The app should intentionally include some recommendations that are slightly outside the student's initial profile.
+
+Suggested values:
+
+- target matches profile but also opens a new domain: 1.0
+- target is adjacent to known interests: 0.7
+- target is popular among similar students but not yet in profile: 0.5
+- target is completely unrelated: 0.1
+
+Example:
+
+A new student selected "mathematics" and "physics".
+The app can still recommend robotics, AI, entrepreneurship, or debate if there is a reasonable bridge.
+
+9.13 AssumptionRiskPenalty
+
+This penalty prevents a weak first assumption from becoming a destructive dependency.
+
+Examples of risky assumptions:
+
+- assuming a new student only wants academic events because they are in preparatory classes;
+- assuming a department defines all interests;
+- assuming missing profile fields mean absence of interest;
+- assuming popular events are always relevant;
+- assuming first-week clicks represent stable preferences.
+
+Suggested values:
+
+- low-risk assumption: 0.00
+- medium-risk assumption: 0.05
+- high-risk assumption: 0.10
+- repeated unconfirmed assumption: 0.15
+
+Implementation rule:
+No single signal should dominate the recommendation score. Cap the contribution of any one signal family at 35% of the final score.
+
+9.14 New Student Mode
+
+For new students, the system should operate in exploration-first mode during the first weeks.
+
+Rules:
+
+- show recommendations from at least 3 different categories;
+- mix academic, social, association, help, and career recommendations;
+- ask lightweight feedback: relevant, not relevant, maybe later;
+- expire unconfirmed assumptions after a short time;
+- keep the explanation visible;
+- let the student correct the recommendation without filling a long profile.
+
+
+============================================================
+10. RECOMMENDATION EXAMPLES
+============================================================
+
+Example 1: Event Recommendation
+
+Recommendation:
+"Attend the AI Club workshop today at 13:15."
+
+Why:
+- You selected AI as an interest.
+- You are free from 13:00 to 14:00.
+- The event is organized by a verified association.
+- 8 students from your year are also interested.
+
+Score: 87%
+Confidence: 82%
+
+Example 2: Help Recommendation
+
+Recommendation:
+"Ask Alice for help in physics."
+
+Why:
+- Alice offers physics support.
+- She helped 9 students before.
+- 8 students left positive feedback.
+- You both have a free slot today from 15:00 to 16:00.
+
+Score: 91%
+Confidence: 88%
+
+Example 3: Association Recommendation
+
+Recommendation:
+"Discover the Robotics Association."
+
+Why:
+- You are interested in electronics and AI.
+- The association has an event this week.
+- They are recruiting first-year students.
+- You have free time during their next meeting.
+
+Score: 84%
+Confidence: 79%
+
+
+============================================================
+11. USER WORKFLOWS
+============================================================
+
+11.1 New Student Onboarding
+
+1. Student enters name, department, and year.
+2. Student optionally adds interests and skills.
+3. Student optionally imports timetable.
+4. Student sees recommendations immediately.
+5. Student can improve results with one-click questions.
+
+One-click questions:
+
+- I want help.
+- I can help others.
+- I want to join an association.
+- I want to find project teammates.
+- I want to discover events.
+
+11.2 Asking for Help
+
+1. Student searches or receives recommendation.
+2. Student clicks "Ask for help."
+3. Student selects skill/topic.
+4. App suggests possible time slots.
+5. Helper accepts or proposes another time.
+6. After completion, requester gives feedback.
+7. Helper's Impact Profile is updated.
+
+11.3 Offering Help
+
+1. Student adds skills they can help with.
+2. App recommends students who need help.
+3. Student sends contextual offer.
+4. If accepted, a help session is created.
+5. Feedback updates Impact Profile.
+
+11.4 Association Event Flow
+
+1. Association creates event.
+2. App analyzes event tags, time, and audience.
+3. App recommends the event to relevant students.
+4. Students mark interest or attend.
+5. Association sees analytics.
+
+11.5 Admin Flow
+
+1. Admin opens dashboard.
+2. Admin sees engagement by department and association.
+3. Admin identifies invisible events.
+4. Admin identifies isolated groups.
+5. Admin exports insights.
+
+
+============================================================
+12. BUILD WORKFLOW FOR THE TEAM
+============================================================
+
+Phase 1: Setup
+
+- Initialize Next.js project.
+- Add TypeScript.
+- Add Tailwind CSS.
+- Add shadcn/ui.
+- Add Prisma.
+- Choose SQLite first for speed.
+
+Phase 2: Database
+
+- Create Prisma schema.
+- Add models for Student, Association, Event, HelpRequest, Feedback, ImpactRecord, Recommendation.
+- Seed demo data.
+
+Phase 3: Matching Engine
+
+- Create scoring functions.
+- Create explanation generator.
+- Generate recommendations for each student.
+
+Phase 4: Main UI
+
+- Build landing page.
+- Build student dashboard.
+- Build recommendation cards.
+- Build event page.
+- Build association page.
+- Build impact profile page.
+
+Phase 5: Request System
+
+- Add contextual request buttons.
+- Add request status.
+- Add feedback after completion.
+- Update Impact Profile.
+
+Phase 6: Admin Dashboard
+
+- Add charts.
+- Add engagement metrics.
+- Add invisible events.
+- Add most requested skills.
+- Add isolated student groups.
+
+Phase 7: Pitch Polish
+
+- Add problem statement section.
+- Add 90-day adoption plan.
+- Add demo script.
+- Add sample accounts.
+- Make UI visually strong.
+
+
+============================================================
+13. MVP SCOPE FOR 24 HOURS
+============================================================
+
+Must build:
+
+- Landing page
+- Student dashboard
+- Recommendation cards
+- Matching score
+- Explanation text
+- Impact Profile
+- Contextual Requests
+- Events page
+- Associations page
+- Admin dashboard
+- Seed data
+
+Should build if time allows:
+
+- Timetable .ics import
+- CSV import
+- Simple message thread after accepted request
+- Better analytics
+- Privacy settings
+
+Do not prioritize:
+
+- Generic social feed
+- Likes
+- Followers
+- Full real-time chat
+- Complex maps
+- Heavy machine learning
+
+
+============================================================
+14. 90-DAY ADOPTION STRATEGY
+============================================================
+
+Days 1-30: Controlled Launch
+
+- Start with 5 active associations.
+- Invite student ambassadors.
+- Add QR codes at events.
+- Allow students to join without full profile.
+- Use alumni/professionals to explain why mentorship matters.
+
+Days 31-60: Engagement Growth
+
+- Add timetable import.
+- Add help requests by skill.
+- Launch "help someone this week" campaign.
+- Let associations recruit through the app.
+- Highlight impact profiles.
+
+Days 61-90: Institutional Adoption
+
+- Give dashboard access to student life administration.
+- Publish engagement insights.
+- Expand to all associations.
+- Add verified badges for active mentors and associations.
+- Prepare integration with official campus systems.
+
+
+============================================================
+15. DEMO SCRIPT FOR THE JURY
+============================================================
+
+1. Show the problem:
+"The campus has many students, associations, and events, but connections do not happen because information is scattered and many students stay invisible."
+
+2. Show a student profile with incomplete data.
+"Even with a weak profile, the app can recommend useful connections."
+
+3. Show recommendation cards.
+"Each recommendation is contextual and explainable."
+
+4. Show a help request.
+"Instead of generic chat, the student sends a structured request."
+
+5. Show feedback.
+"After help is completed, positive feedback becomes proof of impact."
+
+6. Show Impact Profile.
+"The app makes mentorship and knowledge transmission visible without forcing students to become influencers."
+
+7. Show admin dashboard.
+"The university can now see invisible events, isolated groups, and engagement gaps."
+
+8. Show adoption plan.
+"We launch through associations, ambassadors, alumni, and professional mentorship."
+
+
+============================================================
+16. TWIST 01 RESPONSE
+============================================================
+
+Twist 01:
+
+Apparent objective:
+Suggest relevant people and events to new students.
+
+Hidden consequence:
+An initial assumption that looks neutral can become a destructive dependency if the system treats it as stable truth.
+
+Product impact:
+Campus Radar must be designed for new students without trapping them inside early assumptions.
+
+Risk:
+If a student joins the platform and the system immediately assumes that department, year, first clicks, or missing interests define the student, the app may create a filter bubble. It may keep recommending the same types of people and events, making the campus even more fragmented.
+
+Our response:
+
+- Treat all early data as hypotheses, not truth.
+- Store source, confidence, and expiration for each signal.
+- Explain which assumptions were used in every recommendation.
+- Add exploration recommendations to avoid locking students into one path.
+- Let users correct recommendations with one click.
+- Cap the influence of any one signal family.
+- Track assumption risk in the recommendation engine.
+
+Feature added:
+Assumption Ledger.
+
+The Assumption Ledger records the assumptions behind a recommendation.
+
+Example:
+
+Recommendation:
+"Join the Robotics discovery session."
+
+Assumptions:
+- The student may like applied science because they study mathematics and physics.
+- The student is available at 14:00 according to imported timetable.
+- The event is beginner-friendly according to association tags.
+
+Risk control:
+- The app asks if this is relevant.
+- If ignored repeatedly, the assumption is weakened.
+- If confirmed, confidence increases.
+
+Demo line:
+"For new students, Campus Radar does not pretend to know who they are. It starts with cautious hypotheses, explains them, and learns without locking the student into a fixed identity."
+
+
+============================================================
+17. FINAL POSITIONING
+============================================================
+
+Campus Radar is not another social network.
+
+It is a campus intelligence layer that:
+
+- detects useful connection moments;
+- explains every recommendation;
+- works with incomplete data;
+- values quiet students who help others;
+- gives associations better reach;
+- gives administration engagement visibility;
+- turns student support into professional proof of leadership and mentorship.
+
+Final pitch:
+
+"Campus Radar solves the invisible campus problem by turning scattered schedules, events, associations, and weak student data into explainable moments of connection, while transforming student help into proof of impact."

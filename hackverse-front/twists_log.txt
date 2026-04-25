@@ -1,0 +1,48 @@
+HACKVERSE TWISTS LOG
+Campus Radar
+
+============================================================
+TWIST 01
+============================================================
+
+Time window:
+0-2h
+
+Source:
+twist1.pdf
+
+Text understood from the PDF:
+"Objectif apparent : suggerer des personnes et evenements pertinents aux nouveaux etudiants. La consequence implicite, qui parait d'abord n'affecter qu'un sous-ensemble du systeme mais finit, si on suit correctement les dependances, par contaminer ce qui avait ete pris pour stable, est qu'une hypothese de depart tenue pour neutre devient une dependance destructrice."
+
+Meaning:
+The app must suggest relevant people and events to new students, but the dangerous part is that early assumptions can become destructive if the system treats them as neutral and stable.
+
+Impact on our project:
+Campus Radar must not lock new students into recommendations based only on weak first-day data such as department, year, first clicks, missing profile fields, or initial interests.
+
+Product decision:
+Add New Student Mode and Assumption Ledger.
+
+New Student Mode:
+- starts with cautious recommendations;
+- mixes academic, social, association, help, and career opportunities;
+- avoids filter bubbles;
+- asks lightweight feedback;
+- does not require a complete profile.
+
+Assumption Ledger:
+- records which assumptions produced a recommendation;
+- stores source and confidence;
+- shows the explanation to the user;
+- lets the user correct wrong assumptions;
+- weakens assumptions that are ignored or rejected.
+
+Mathematical change:
+Add ExplorationScore and AssumptionRiskPenalty to the matching model.
+
+Updated positioning:
+Campus Radar does not pretend to know new students immediately. It starts with explainable hypotheses, tests them safely, and avoids turning early weak data into permanent identity.
+
+Demo requirement:
+Show a new student with incomplete data receiving diverse recommendations, then show the assumptions behind one recommendation and how the user can correct it.
+

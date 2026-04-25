@@ -1,0 +1,502 @@
+import type {
+  AdminMetric,
+  AdoptionPhase,
+  Association,
+  CampusEvent,
+  EngagementDatum,
+  HelpRequest,
+  ImpactProfile,
+  Recommendation,
+  RiskItem,
+  Student,
+} from "@/types/campus";
+
+export const students: Student[] = [
+  {
+    id: "amina",
+    name: "Amina N.",
+    initials: "AN",
+    department: "Preparatory maths-physics",
+    academicYear: "Year 1",
+    status: "new",
+    profileCertainty: 0.42,
+    interests: ["Mathematics", "Physics", "AI curious"],
+    skillsOffered: [],
+    skillsNeeded: ["Linear algebra", "Campus orientation"],
+    availability: ["Today 13:00-14:00", "Tomorrow 15:00-16:00"],
+    location: "Block B",
+    signals: [
+      {
+        id: "signal-filiere",
+        label: "Academic track",
+        value: "Maths-physics prep",
+        source: "student-declared",
+        confidence: 0.72,
+        expiresInDays: 45,
+      },
+      {
+        id: "signal-timetable",
+        label: "Free slot",
+        value: "Today 13:00-14:00",
+        source: "imported-timetable",
+        confidence: 0.84,
+        expiresInDays: 7,
+      },
+      {
+        id: "signal-interest",
+        label: "Possible AI interest",
+        value: "Inferred from maths + physics",
+        source: "inferred",
+        confidence: 0.48,
+        expiresInDays: 14,
+      },
+    ],
+  },
+];
+
+export const recommendations: Recommendation[] = [
+  {
+    id: "rec-robotics",
+    type: "event",
+    title: "Robotics discovery session",
+    subtitle: "Today at 13:15 · Block B innovation room",
+    description:
+      "A beginner-friendly session where new students can observe, ask questions, and meet builders without joining immediately.",
+    target: "Robotics Club",
+    actionLabel: "Attend with similar students",
+    secondaryActionLabel: "Mark as not relevant",
+    reasons: [
+      "You are free from 13:00 to 14:00.",
+      "The event connects maths, physics, electronics, and AI.",
+      "9 new students from prep tracks are also exploring it.",
+    ],
+    assumptions: [
+      {
+        id: "a1",
+        text: "Maths-physics may indicate interest in applied science.",
+        source: "inferred",
+        confidence: 0.54,
+        risk: "medium",
+        confirmed: false,
+      },
+      {
+        id: "a2",
+        text: "Imported timetable is reliable enough for the free slot.",
+        source: "imported-timetable",
+        confidence: 0.84,
+        risk: "low",
+        confirmed: true,
+      },
+      {
+        id: "a3",
+        text: "The association marked this as beginner-friendly.",
+        source: "association-verified",
+        confidence: 0.9,
+        risk: "low",
+        confirmed: true,
+      },
+    ],
+    tags: ["Event", "Robotics", "Exploration"],
+    scores: {
+      interest: 0.72,
+      skill: 0.42,
+      availability: 1,
+      academicContext: 0.78,
+      location: 0.9,
+      socialProof: 0.66,
+      freshness: 0.92,
+      sourceReliability: 0.87,
+      exploration: 0.92,
+      missingDataPenalty: 0.04,
+      conflictPenalty: 0,
+      assumptionRiskPenalty: 0.05,
+    },
+  },
+  {
+    id: "rec-mentor",
+    type: "help",
+    title: "Ask Mehdi for help in linear algebra",
+    subtitle: "Verified mentor · 18 students helped · 94% positive feedback",
+    description:
+      "A structured 30-minute support request, not a generic chat. If accepted, it becomes a help session that can update the mentor's impact profile.",
+    target: "Mehdi K.",
+    actionLabel: "Ask for help",
+    secondaryActionLabel: "Maybe later",
+    reasons: [
+      "You marked mathematics as a difficult transition area.",
+      "Mehdi helped 18 students with strong feedback.",
+      "You both have a shared free slot tomorrow at 15:00.",
+    ],
+    assumptions: [
+      {
+        id: "a4",
+        text: "A new prep student may need academic support.",
+        source: "inferred",
+        confidence: 0.58,
+        risk: "medium",
+        confirmed: false,
+      },
+      {
+        id: "a5",
+        text: "Positive feedback is a reliable impact signal.",
+        source: "student-declared",
+        confidence: 0.76,
+        risk: "low",
+        confirmed: true,
+      },
+      {
+        id: "a6",
+        text: "Tomorrow's slot does not conflict with your timetable.",
+        source: "imported-timetable",
+        confidence: 0.82,
+        risk: "low",
+        confirmed: true,
+      },
+    ],
+    tags: ["Help", "Maths", "Mentorship"],
+    scores: {
+      interest: 0.84,
+      skill: 1,
+      availability: 0.95,
+      academicContext: 0.86,
+      location: 0.7,
+      socialProof: 0.94,
+      freshness: 0.82,
+      sourceReliability: 0.78,
+      exploration: 0.54,
+      missingDataPenalty: 0.02,
+      conflictPenalty: 0,
+      assumptionRiskPenalty: 0.05,
+    },
+  },
+  {
+    id: "rec-ai",
+    type: "association",
+    title: "Discover the AI Builders Circle",
+    subtitle: "Projects, talks, teammates · open to observers",
+    description:
+      "A low-commitment association suggestion that broadens the student's identity instead of reducing them to their department.",
+    target: "AI Builders Circle",
+    actionLabel: "View association",
+    secondaryActionLabel: "Reduce AI suggestions",
+    reasons: [
+      "AI is an adjacent exploration domain to maths and physics.",
+      "The association accepts beginners and project observers.",
+      "Their next meeting is before your last class, not after it.",
+    ],
+    assumptions: [
+      {
+        id: "a7",
+        text: "AI curiosity is inferred, not confirmed.",
+        source: "inferred",
+        confidence: 0.48,
+        risk: "medium",
+        confirmed: false,
+      },
+      {
+        id: "a8",
+        text: "Exploration mode should include adjacent opportunities.",
+        source: "admin-verified",
+        confidence: 0.88,
+        risk: "low",
+        confirmed: true,
+      },
+      {
+        id: "a9",
+        text: "Meeting location is close to the student's campus zone.",
+        source: "association-verified",
+        confidence: 0.7,
+        risk: "low",
+        confirmed: true,
+      },
+    ],
+    tags: ["Association", "AI", "Projects"],
+    scores: {
+      interest: 0.62,
+      skill: 0.52,
+      availability: 0.8,
+      academicContext: 0.7,
+      location: 0.72,
+      socialProof: 0.61,
+      freshness: 0.78,
+      sourceReliability: 0.76,
+      exploration: 1,
+      missingDataPenalty: 0.06,
+      conflictPenalty: 0,
+      assumptionRiskPenalty: 0.05,
+    },
+  },
+  {
+    id: "rec-career",
+    type: "career",
+    title: "Meet Sarah, internship search mentor",
+    subtitle: "Alumni · CV review · first internship strategy",
+    description:
+      "An intentional exploration card outside the student's academic bubble, focused on professional readiness and mentorship culture.",
+    target: "Sarah D.",
+    actionLabel: "Request CV guidance",
+    secondaryActionLabel: "Hide career cards",
+    reasons: [
+      "New students often underestimate early career preparation.",
+      "Sarah passed through the same school and mentors quietly.",
+      "This recommendation broadens an academic-only profile safely.",
+    ],
+    assumptions: [
+      {
+        id: "a10",
+        text: "Career mentorship should be explored early, not only in final year.",
+        source: "alumni-verified",
+        confidence: 0.82,
+        risk: "low",
+        confirmed: true,
+      },
+      {
+        id: "a11",
+        text: "The student has not rejected professional content.",
+        source: "inferred",
+        confidence: 0.46,
+        risk: "medium",
+        confirmed: false,
+      },
+      {
+        id: "a12",
+        text: "Alumni source is verified by the campus team.",
+        source: "admin-verified",
+        confidence: 0.92,
+        risk: "low",
+        confirmed: true,
+      },
+    ],
+    tags: ["Career", "Alumni", "Exploration"],
+    scores: {
+      interest: 0.38,
+      skill: 0.6,
+      availability: 0.72,
+      academicContext: 0.5,
+      location: 0.5,
+      socialProof: 0.82,
+      freshness: 0.86,
+      sourceReliability: 0.9,
+      exploration: 1,
+      missingDataPenalty: 0.07,
+      conflictPenalty: 0.02,
+      assumptionRiskPenalty: 0.05,
+    },
+  },
+];
+
+export const impactProfile: ImpactProfile = {
+  studentId: "raoul",
+  headline: "Quiet mentor · Software engineering · React, maths, internship search",
+  links: [
+    { label: "LinkedIn", href: "#" },
+    { label: "GitHub", href: "#" },
+    { label: "Portfolio", href: "#" },
+  ],
+  skills: [
+    { name: "Mathematics", helpedCount: 12, positiveFeedback: 11, confidence: 0.92 },
+    { name: "React and UI", helpedCount: 5, positiveFeedback: 5, confidence: 0.78 },
+    { name: "Internship search", helpedCount: 3, positiveFeedback: 3, confidence: 0.71 },
+    { name: "Project debugging", helpedCount: 4, positiveFeedback: 3, confidence: 0.68 },
+  ],
+  badges: ["Math Helper", "React Mentor", "CV Reviewer", "Project Teammate"],
+};
+
+export const helpRequests: HelpRequest[] = [
+  {
+    id: "req-1",
+    title: "Linear algebra support",
+    requester: "Amina N.",
+    receiver: "Mehdi K.",
+    skill: "Mathematics",
+    detail: "Needs 30 minutes on vector spaces before Friday.",
+    status: "Pending",
+    suggestedSlot: "Tomorrow 15:00-15:30",
+  },
+  {
+    id: "req-2",
+    title: "React project review",
+    requester: "Junior dev group",
+    receiver: "Raoul M.",
+    skill: "React",
+    detail: "Wants feedback on component structure and state flow.",
+    status: "Accepted",
+    suggestedSlot: "Today 18:00-18:45",
+  },
+  {
+    id: "req-3",
+    title: "CV first draft",
+    requester: "Prep Year 2 student",
+    receiver: "Sarah D.",
+    skill: "Internship search",
+    detail: "Needs help translating school projects into internship language.",
+    status: "Completed",
+    suggestedSlot: "Completed yesterday",
+  },
+];
+
+export const campusEvents: CampusEvent[] = [
+  {
+    id: "event-ai",
+    title: "AI Club: build a tiny recommender",
+    association: "AI Builders Circle",
+    description:
+      "A hands-on session that matches the Campus Radar concept and lets beginners understand recommendation logic.",
+    startTime: "Today 13:15",
+    endTime: "Today 14:00",
+    location: "Block B",
+    tags: ["AI", "Projects", "Beginner"],
+    capacity: 60,
+    interestedCount: 42,
+    verified: true,
+    relevance: 0.87,
+  },
+  {
+    id: "event-physics",
+    title: "Physics peer clinic",
+    association: "Peer Learning Guild",
+    description:
+      "Structured help table led by verified second-year students with feedback-based impact records.",
+    startTime: "Tomorrow 15:00",
+    endTime: "Tomorrow 16:30",
+    location: "Library room 2",
+    tags: ["Physics", "Help", "Prep"],
+    capacity: 35,
+    interestedCount: 29,
+    verified: true,
+    relevance: 0.84,
+  },
+  {
+    id: "event-alumni",
+    title: "Alumni talk: why mentorship matters",
+    association: "Career Office",
+    description:
+      "Professionals explain why teaching, helping, and mentoring are employability signals.",
+    startTime: "Friday 17:30",
+    endTime: "Friday 19:00",
+    location: "Amphi 1",
+    tags: ["Career", "Leadership", "Impact"],
+    capacity: 120,
+    interestedCount: 88,
+    verified: true,
+    relevance: 0.81,
+  },
+];
+
+export const associations: Association[] = [
+  {
+    id: "robotics",
+    name: "Robotics Club",
+    mission: "Turn applied science into concrete machines, demos, and competitions.",
+    tags: ["Robotics", "Electronics", "AI"],
+    recruitmentNeeds: ["Maths-physics students", "CAD beginners", "Embedded systems"],
+    activeEvents: 3,
+    relevantStudents: 96,
+  },
+  {
+    id: "ai-builders",
+    name: "AI Builders Circle",
+    mission: "Help students learn AI through small practical projects and peer reviews.",
+    tags: ["AI", "Projects", "Research"],
+    recruitmentNeeds: ["Project teammates", "Dataset curators", "Demo builders"],
+    activeEvents: 4,
+    relevantStudents: 112,
+  },
+  {
+    id: "peer-learning",
+    name: "Peer Learning Guild",
+    mission: "Make student help visible, structured, and professionally valuable.",
+    tags: ["Mentorship", "Help", "Leadership"],
+    recruitmentNeeds: ["Math mentors", "Physics mentors", "CV reviewers"],
+    activeEvents: 5,
+    relevantStudents: 143,
+  },
+];
+
+export const adminMetrics: AdminMetric[] = [
+  {
+    label: "New students onboarded",
+    value: "500",
+    detail: "synthetic profile dataset",
+    tone: "success",
+  },
+  {
+    label: "Associations mapped",
+    value: "34",
+    detail: "events and recruitment tags",
+  },
+  {
+    label: "Invisible events",
+    value: "11",
+    detail: "verified events with weak reach",
+    tone: "warning",
+  },
+  {
+    label: "Confirmed help sessions",
+    value: "128",
+    detail: "impact profile signals",
+    tone: "success",
+  },
+];
+
+export const engagementData: EngagementDatum[] = [
+  { domain: "Prep maths", engagement: 74, isolationRisk: 22 },
+  { domain: "Software", engagement: 88, isolationRisk: 14 },
+  { domain: "Civil eng.", engagement: 46, isolationRisk: 51 },
+  { domain: "Business", engagement: 61, isolationRisk: 35 },
+  { domain: "Health", engagement: 38, isolationRisk: 59 },
+];
+
+export const riskItems: RiskItem[] = [
+  {
+    title: "Department overfitting",
+    description:
+      "31% of new-student recommendations rely too heavily on filiere. Signal family cap is applied.",
+    severity: "medium",
+  },
+  {
+    title: "Missing profile fields",
+    description:
+      "Missing interests are treated as unknown, not as absence of interest.",
+    severity: "low",
+  },
+  {
+    title: "Event visibility gap",
+    description:
+      "11 events have verified sources but weak target reach. Associations need stronger tags.",
+    severity: "high",
+  },
+];
+
+export const adoptionPlan: AdoptionPhase[] = [
+  {
+    period: "Days 1-30",
+    title: "Controlled launch",
+    actions: [
+      "Start with 5 active associations.",
+      "Invite student ambassadors and alumni.",
+      "Use QR codes at events.",
+      "Allow onboarding without full profile.",
+    ],
+  },
+  {
+    period: "Days 31-60",
+    title: "Engagement growth",
+    actions: [
+      "Add timetable imports.",
+      "Launch help someone this week campaign.",
+      "Let associations recruit through contextual requests.",
+      "Highlight impact profiles.",
+    ],
+  },
+  {
+    period: "Days 61-90",
+    title: "Institutional adoption",
+    actions: [
+      "Give dashboards to student-life administration.",
+      "Publish engagement and isolation insights.",
+      "Expand to all associations.",
+      "Verify active mentors and associations.",
+    ],
+  },
+];

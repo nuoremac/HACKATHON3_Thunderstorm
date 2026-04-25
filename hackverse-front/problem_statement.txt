@@ -1,0 +1,95 @@
+PROJECT: Campus Radar
+
+PROBLEM WE ARE SOLVING
+
+Universities can have thousands of students, many associations, and many events, but students still feel disconnected. The issue is not that there are no opportunities. The issue is that information does not reach the right people at the right time, and students rarely know who around them shares their interests, availability, goals, or academic context.
+
+In this challenge, the campus has about 12,000 students and 34 associations. Events exist, associations are active, and opportunities are present, but the connections do not naturally happen. A normal social network would not solve this, because students already ignore generic platforms and do not want to spend time filling long profiles or browsing endless posts.
+
+The real problem is therefore:
+
+How can we create useful student connections even when user profiles are incomplete, information is scattered, events are not always visible, and campus data may be missing, duplicated, late, or unreliable?
+
+After Twist 01, we must also solve a more specific risk:
+
+How can we help new students discover relevant people and events without letting first-day assumptions become permanent filters that limit what they discover?
+
+For new students, the app must treat early data as a hypothesis, not as a fixed identity. A department, a first interest, a missing profile field, or a first click should help the system start, but it must not trap the student in a narrow recommendation bubble.
+
+WHO IS AFFECTED
+
+1. Students
+Students miss events, associations, project partners, study groups, and people who could help them grow because they do not know what is relevant to them.
+
+2. Associations
+Associations organize events and need members, but their communication often reaches only people who already know them.
+
+3. Campus administration
+The administration cannot easily see which communities are isolated, which events are invisible, or where student engagement is weak.
+
+WHY EXISTING SOLUTIONS ARE NOT ENOUGH
+
+Generic social networks depend on users posting, following, liking, and completing profiles. On a campus, this fails because many students are passive users. They do not want another app that demands attention.
+
+Simple event calendars also fail because they show the same information to everyone. They do not answer the important question: "Why is this event or person relevant to me now?"
+
+Messaging groups fail because information gets lost, duplicated, or sent to people who are not concerned.
+
+OUR SOLUTION
+
+Campus Radar is a contextual connection engine. It does not try to become another social network. Instead, it uses weak campus signals such as timetable, filiere, academic year, interests, availability, associations, and events to detect useful moments of connection.
+
+For new students, Campus Radar uses cautious, explainable hypotheses. It recommends useful opportunities while showing why they were recommended and allowing the student to correct the system quickly.
+
+The system recommends:
+
+- people a student should meet;
+- events a student should attend;
+- associations a student should discover;
+- study groups or project partners;
+- connection moments based on free time and context.
+
+The most important part is that each recommendation is explainable. The student does not only see "Join this event." The student sees why:
+
+- same interest;
+- compatible availability;
+- same or complementary field;
+- event near the next class;
+- association linked to the student's goals;
+- other students with similar context are attending.
+
+KEY PRODUCT PRINCIPLE
+
+The product must work even when students do not complete their profiles.
+
+If interests are missing, the system can use filiere, year, timetable, and event context.
+If timetable data is missing, the system can use declared availability or popular campus moments.
+If user data is weak, the system can still suggest relevant associations, trending events, and one-click onboarding questions.
+
+WHAT MAKES THE PRODUCT DIFFERENT
+
+Campus Radar turns scattered campus information into actionable connection moments.
+
+Instead of saying:
+"Here is a list of events."
+
+It says:
+"You have 45 minutes free. Students from your field are also free. The AI Club has a session nearby. This is a good moment to connect."
+
+This makes the system practical, contextual, and directly useful.
+
+SUCCESS CRITERIA
+
+The product is successful if it can:
+
+- help a student discover relevant people, associations, and events quickly;
+- produce useful recommendations without requiring complete profiles;
+- explain why each recommendation was made;
+- handle missing or imperfect data;
+- help associations reach the right students;
+- help administrators understand engagement gaps on campus;
+- present a realistic 90-day adoption strategy.
+
+ONE-SENTENCE PITCH
+
+Campus Radar solves the invisible campus problem by turning scattered schedules, events, associations, and weak student data into explainable, contextual moments of connection.

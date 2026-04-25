@@ -1,0 +1,125 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 43 54% 91%;
+    --foreground: 165 20% 11%;
+    --card: 45 80% 97%;
+    --card-foreground: 165 20% 11%;
+    --popover: 45 80% 97%;
+    --popover-foreground: 165 20% 11%;
+    --primary: 162 41% 22%;
+    --primary-foreground: 44 100% 94%;
+    --secondary: 38 68% 52%;
+    --secondary-foreground: 165 20% 11%;
+    --muted: 46 36% 87%;
+    --muted-foreground: 157 8% 42%;
+    --accent: 40 66% 86%;
+    --accent-foreground: 165 20% 11%;
+    --destructive: 13 55% 52%;
+    --destructive-foreground: 45 80% 97%;
+    --border: 165 20% 11%;
+    --input: 165 20% 11%;
+    --ring: 162 41% 22%;
+    --radius: 1.4rem;
+  }
+  
+  .dark {
+    --background: 165 20% 5%;
+    --foreground: 45 80% 97%;
+    --card: 165 20% 8%;
+    --card-foreground: 45 80% 97%;
+    --popover: 165 20% 8%;
+    --popover-foreground: 45 80% 97%;
+    --primary: 162 41% 22%;
+    --primary-foreground: 44 100% 94%;
+    --secondary: 165 20% 12%;
+    --secondary-foreground: 45 80% 97%;
+    --muted: 165 20% 10%;
+    --muted-foreground: 157 8% 65%;
+    --accent: 165 20% 13%;
+    --accent-foreground: 45 80% 97%;
+    --destructive: 13 55% 52%;
+    --destructive-foreground: 45 80% 97%;
+    --border: 165 20% 15%;
+    --input: 165 20% 15%;
+    --ring: 165 20% 30%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-background text-foreground antialiased transition-colors duration-300;
+    background: var(--bg-layer-1, radial-gradient(circle at 10% 8%, rgba(214, 148, 53, 0.3), transparent 28rem)),
+                var(--bg-layer-2, radial-gradient(circle at 88% 10%, rgba(65, 109, 122, 0.22), transparent 34rem)),
+                var(--bg-layer-3, linear-gradient(135deg, hsl(43 54% 91%), hsl(45 80% 97%) 42%, hsl(39 38% 79%)));
+  }
+
+  .dark body {
+    --bg-layer-1: radial-gradient(circle at 10% 8%, rgba(214, 148, 53, 0.1), transparent 28rem);
+    --bg-layer-2: radial-gradient(circle at 88% 10%, rgba(65, 109, 122, 0.1), transparent 34rem);
+    --bg-layer-3: linear-gradient(135deg, hsl(165 20% 4%), hsl(165 20% 7%) 42%, hsl(165 20% 3%));
+  }
+
+  body::before {
+    position: fixed;
+    inset: 0;
+    z-index: -10;
+    pointer-events: none;
+    content: "";
+    background-image:
+      linear-gradient(rgba(32, 79, 66, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(32, 79, 66, 0.045) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(to bottom, black, transparent 74%);
+  }
+
+  ::selection {
+    color: hsl(var(--primary-foreground));
+    background: hsl(var(--primary));
+  }
+}
+
+@layer components {
+  .shell {
+    width: min(1180px, calc(100% - 2rem));
+    margin-inline: auto;
+  }
+
+  .eyebrow {
+    @apply mb-3 text-xs font-black uppercase tracking-[0.18em] text-radar-clay;
+  }
+
+  .display-title {
+    @apply font-display leading-[0.92] tracking-[-0.07em];
+  }
+
+  .glass-panel {
+    @apply rounded-[2rem] border border-border bg-card/80 shadow-card backdrop-blur-xl;
+  }
+
+  .subtle-grid {
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(32, 79, 66, 0.12) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: hsl(var(--border) / 0.4);
+    border-radius: 20px;
+  }
+}
