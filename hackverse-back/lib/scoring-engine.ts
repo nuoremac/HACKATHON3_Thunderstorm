@@ -331,8 +331,23 @@ export function buildRecommendation(context: CandidateContext): RecommendationOu
   });
 
   const positiveScore = signalContributions.reduce((sum, value) => sum + value, 0);
+
+  // TWIST 06 : Anti-Stigmatisation et Neutralité Sociale
+  // On s'assure que le système ne cible pas les étudiants "isolés".
+  // Si un étudiant n'a aucune interaction passée, on neutralise son score social 
+  // pour qu'il soit traité exactement comme un étudiant actif.
+  // Cela empêche l'algorithme d'appliquer des logiques spécifiques aux profils "solitaires".
+  let socialNeutralityAdjustment = 0;
+  if (targetType === "student" && socialProofScore(context) === 0.5) {
+     // L'étudiant est "socialement neutre" (pas encore de feedback).
+     // On s'assure qu'il reçoit un boost d'équité pour être visible autant que les autres
+     // sans être marqué comme "à aider".
+     socialNeutralityAdjustment = 0.05; 
+  }
+
   const finalScore = clamp(
-    positiveScore -
+    positiveScore +
+      socialNeutralityAdjustment -
       breakdown.MissingDataPenalty -
       breakdown.ConflictPenalty -
       breakdown.AssumptionRiskPenalty
