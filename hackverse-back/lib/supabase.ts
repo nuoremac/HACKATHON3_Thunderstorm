@@ -13,6 +13,9 @@ if (!supabaseUrl || !supabaseServiceRoleKey) {
   );
 }
 
+console.log("Supabase Client Init - URL:", supabaseUrl);
+console.log("Supabase Client Init - Key Prefix:", supabaseServiceRoleKey.substring(0, 10) + "...");
+
 export const supabase = createClient(supabaseUrl, supabaseServiceRoleKey, {
   auth: {
     autoRefreshToken: false,

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { memo } from "react";
 
 import {
@@ -41,6 +42,7 @@ import type {
   ImpactProfile,
 } from "@/types/campus";
 import * as api from "@/lib/api";
+import { useI18n } from "@/lib/i18n-context";
 import { 
   adoptionPlan as mockAdoptionPlan, 
   adminMetrics as mockAdminMetrics,
@@ -70,6 +72,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function CampusWorkspace() {
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("student");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,46 +89,41 @@ export function CampusWorkspace() {
   const selectedRequest = requests.find((request) => request.id === selectedRequestId);
 
   useEffect(() => {
-    async function loadStudent() {
-      try {
-        const allStudents = await api.getStudents();
-        if (allStudents.length > 0) {
-          setStudent(allStudents[0]);
-        }
-      } catch (err) {
-        console.error("Failed to load student context:", err);
-      }
-    }
-    loadStudent();
-  }, []);
-
-  useEffect(() => {
-    if (!student) return;
-
-    async function loadRadarData() {
+    async function loadInitialData() {
       try {
         setIsLoading(true);
-        const [recs, evs, assocs, imp] = await Promise.all([
-          api.getRecommendations(student.id),
+        // Start fetching everything in parallel
+        const [allStudents, evs, assocs] = await Promise.all([
+          api.getStudents(),
           api.getEvents(),
           api.getAssociations(),
-          api.getImpactProfile(student.id),
         ]);
 
-        setRecommendations(recs);
         setEvents(evs);
         setAssociations(assocs);
-        setImpact(imp);
+
+        if (allStudents.length > 0) {
+          const firstStudent = allStudents[0];
+          setStudent(firstStudent);
+          
+          // Now fetch student-specific data
+          const [recs, imp] = await Promise.all([
+            api.getRecommendations(firstStudent.id),
+            api.getImpactProfile(firstStudent.id),
+          ]);
+          
+          setRecommendations(recs);
+          setImpact(imp);
+        }
         setIsLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error("Failed to load campus workspace data:", err);
         setError("Failed to connect to the backend radar.");
         setIsLoading(false);
       }
     }
-
-    loadRadarData();
-  }, [student?.id]);
+    loadInitialData();
+  }, []);
 
   if (error || !student) {
     return (
@@ -163,13 +161,18 @@ export function CampusWorkspace() {
         <aside className="sticky top-0 z-40 hidden h-screen w-[280px] flex-col border-r border-border/40 bg-card/60 backdrop-blur-2xl lg:flex pb-6">
           <div className="flex h-20 items-center px-6 border-b border-border/40">
             <Link className="flex items-center gap-3" href="/">
-              <span className="grid h-10 w-10 place-items-center rounded-xl bg-radar-amber font-display font-black tracking-[-0.1em] text-radar-ink shadow-inner">
-                CR
-              </span>
+              <div className="relative h-10 w-10 overflow-hidden rounded-xl bg-white shadow-inner ring-1 ring-border/40">
+                <Image 
+                  src="/logo.jpg" 
+                  alt="Campus Radar Logo" 
+                  fill 
+                  className="object-cover p-1"
+                />
+              </div>
               <span className="leading-tight">
                 <span className="block font-black tracking-[-0.03em] text-[15px]">Campus Radar</span>
                 <span className="block text-[10px] uppercase font-bold text-muted-foreground tracking-widest">
-                  Workspace
+                  {t("workspace")}
                 </span>
               </span>
             </Link>
@@ -200,7 +203,7 @@ export function CampusWorkspace() {
                 )} 
                 value="student"
               >
-                <Compass className={cn("mr-3 h-5 w-5", activeTab === "student" ? "text-white/80" : "text-muted-foreground")} /> Student Radar
+                <Compass className={cn("mr-3 h-5 w-5", activeTab === "student" ? "text-white/80" : "text-muted-foreground")} /> {t("studentRadar")}
               </TabsTrigger>
               <TabsTrigger 
                 className={cn(
@@ -209,7 +212,7 @@ export function CampusWorkspace() {
                 )} 
                 value="impact"
               >
-                <Star className={cn("mr-3 h-5 w-5", activeTab === "impact" ? "text-white/80" : "text-muted-foreground")} /> Impact Profile
+                <Star className={cn("mr-3 h-5 w-5", activeTab === "impact" ? "text-white/80" : "text-muted-foreground")} /> {t("impactProfile")}
               </TabsTrigger>
               <TabsTrigger 
                 className={cn(
@@ -218,7 +221,7 @@ export function CampusWorkspace() {
                 )} 
                 value="events"
               >
-                <Users className={cn("mr-3 h-5 w-5", activeTab === "events" ? "text-white/80" : "text-muted-foreground")} /> Network & Events
+                <Users className={cn("mr-3 h-5 w-5", activeTab === "events" ? "text-white/80" : "text-muted-foreground")} /> {t("networkEvents")}
               </TabsTrigger>
 
               <div className="my-4 px-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
@@ -232,7 +235,7 @@ export function CampusWorkspace() {
                 )} 
                 value="admin"
               >
-                <Activity className={cn("mr-3 h-5 w-5", activeTab === "admin" ? "text-white/80" : "text-muted-foreground")} /> Platform Admin
+                <Activity className={cn("mr-3 h-5 w-5", activeTab === "admin" ? "text-white/80" : "text-muted-foreground")} /> {t("platformAdmin")}
               </TabsTrigger>
               <TabsTrigger 
                 className={cn(
@@ -241,7 +244,7 @@ export function CampusWorkspace() {
                 )} 
                 value="settings"
               >
-                <Settings className={cn("mr-3 h-5 w-5", activeTab === "settings" ? "text-white/80" : "text-muted-foreground")} /> Settings
+                <Settings className={cn("mr-3 h-5 w-5", activeTab === "settings" ? "text-white/80" : "text-muted-foreground")} /> {t("settings")}
               </TabsTrigger>
             </TabsList>
           </div>
@@ -745,6 +748,7 @@ function AdminSection() {
 
 function SettingsSection({ student }: { student: Student }) {
   const { theme, setTheme } = useTheme();
+  const { t, language, setLanguage } = useI18n();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -832,7 +836,36 @@ function SettingsSection({ student }: { student: Student }) {
             <div className="pt-6 mt-2 border-t border-border/40">
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <p className="font-bold text-sm">Interface Theme</p>
+                  <p className="font-bold text-sm">{t("language")}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Select your preferred language.</p>
+                </div>
+              </div>
+              <div className="flex bg-muted/30 p-1 rounded-xl border border-border/40 w-full sm:w-fit">
+                <button 
+                  onClick={() => setLanguage("en")} 
+                  className={cn(
+                    "flex-1 sm:flex-none px-5 py-2 text-xs font-bold rounded-lg transition-colors border", 
+                    language === "en" ? "bg-background shadow-sm border-border/60 text-foreground" : "border-transparent text-muted-foreground"
+                  )}
+                >
+                  English
+                </button>
+                <button 
+                  onClick={() => setLanguage("fr")} 
+                  className={cn(
+                    "flex-1 sm:flex-none px-5 py-2 text-xs font-bold rounded-lg transition-colors border", 
+                    language === "fr" ? "bg-background shadow-sm border-border/60 text-foreground" : "border-transparent text-muted-foreground"
+                  )}
+                >
+                  Français
+                </button>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-2 border-t border-border/40">
+              <div className="flex items-center justify-between mb-3">
+                <div>
+                  <p className="font-bold text-sm">{t("interfaceTheme")}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">Customize the visual appearance.</p>
                 </div>
               </div>

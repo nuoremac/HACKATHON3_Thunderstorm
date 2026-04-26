@@ -11,13 +11,25 @@ import type {
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+// Simple in-memory cache
+const cache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 1000 * 60; // 1 minute
+
 async function fetchAPI<T>(endpoint: string): Promise<T> {
+  const cached = cache.get(endpoint);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return cached.data;
+  }
+
   const response = await fetch(`${API_URL}${endpoint}`);
   if (!response.ok) {
     throw new Error(`API Error: ${response.statusText}`);
   }
   const result = await response.json();
-  return result.data || result;
+  const data = result.data || result;
+  
+  cache.set(endpoint, { data, timestamp: Date.now() });
+  return data;
 }
 
 // Helpers for mapping

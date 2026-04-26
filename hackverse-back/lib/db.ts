@@ -21,7 +21,9 @@ function unwrapError(error: PostgrestError | null, context: string) {
 }
 
 export async function listStudents() {
+  console.log("DB: listStudents - start");
   const { data, error } = await supabase.from("students").select("*").order("name");
+  console.log("DB: listStudents - complete", { error: error?.message, count: data?.length });
   unwrapError(error, "Failed to list students");
   return (data ?? []) as Student[];
 }
@@ -45,7 +47,9 @@ export async function updateStudent(id: string, payload: Partial<Student>) {
 }
 
 export async function listAssociations() {
+  console.log("DB: listAssociations - start");
   const { data, error } = await supabase.from("associations").select("*").order("name");
+  console.log("DB: listAssociations - complete", { error: error?.message, count: data?.length });
   unwrapError(error, "Failed to list associations");
   return (data ?? []) as Association[];
 }
@@ -57,7 +61,9 @@ export async function createAssociation(payload: Partial<Association>) {
 }
 
 export async function listEvents() {
+  console.log("DB: listEvents - start");
   const { data, error } = await supabase.from("events").select("*").order("start_time");
+  console.log("DB: listEvents - complete", { error: error?.message, count: data?.length });
   unwrapError(error, "Failed to list events");
   return (data ?? []) as Event[];
 }

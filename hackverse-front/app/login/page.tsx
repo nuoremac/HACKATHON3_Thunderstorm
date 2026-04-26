@@ -1,9 +1,38 @@
+"use client";
+
+import { FormEvent, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
+import { signInWithEmail } from "@/lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSubmitting(true);
+    setError(null);
+
+    const { error } = await signInWithEmail(email, password);
+
+    if (error) {
+      setError(error.message);
+      setIsSubmitting(false);
+      return;
+    }
+
+    router.replace("/dashboard");
+  };
+
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4">
       <div className="absolute left-8 top-8">
@@ -16,16 +45,21 @@ export default function LoginPage() {
 
       <div className="w-full max-w-sm animate-fade-up rounded-[1.5rem] border border-border bg-card p-8 shadow-card backdrop-blur-xl">
         <div className="mb-8 text-center">
-          <span className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-primary font-display text-lg font-black tracking-[-0.1em] text-primary-foreground shadow-inner">
-            CR
-          </span>
+          <div className="relative mx-auto h-12 w-12 overflow-hidden rounded-2xl bg-white shadow-inner ring-1 ring-border/40">
+            <Image
+              src="/logo.jpg"
+              alt="Campus Radar Logo"
+              fill
+              className="object-cover p-1"
+            />
+          </div>
           <h1 className="mt-4 font-display text-3xl font-black tracking-[-0.03em]">Welcome back</h1>
           <p className="mt-2 text-sm text-muted-foreground">
             Enter your credentials to access the radar.
           </p>
         </div>
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label className="text-sm font-bold text-muted-foreground" htmlFor="email">
               Email
@@ -33,25 +67,41 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
               required
               placeholder="student@university.edu"
-              className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             />
           </div>
           <div className="space-y-2">
             <label className="text-sm font-bold text-muted-foreground" htmlFor="password">
               Password
             </label>
-            <input
-              id="password"
-              type="password"
-              required
-              placeholder="••••••••"
-              className="flex h-10 w-full rounded-md border border-input bg-background/50 px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                placeholder="••••••••"
+                className="flex h-10 w-full rounded-md border border-input bg-background/50 pl-3 pr-10 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-          <Button asChild className="w-full">
-            <Link href="/dashboard">Sign In</Link>
+
+          {error ? <p className="text-sm text-destructive">{error}</p> : null}
+
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
           </Button>
         </form>
 

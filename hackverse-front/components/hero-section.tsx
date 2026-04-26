@@ -1,47 +1,52 @@
-import { ArrowUpRight, BrainCircuit, ShieldCheck, Sparkles } from "lucide-react";
+"use client";
+
+import { ArrowUpRight, BrainCircuit, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
-const principles = [
-  {
-    icon: Sparkles,
-    title: "Connection moments",
-    text: "The app proposes concrete actions: ask for help, attend together, join a micro-group, or discover an association.",
-  },
-  {
-    icon: BrainCircuit,
-    title: "Explainable recommendations",
-    text: "Every card shows the signals, confidence, and assumptions behind the suggestion.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Twist 01 safe",
-    text: "New-student data is treated as a hypothesis, not a permanent identity.",
-  },
-];
+import { useI18n } from "@/lib/i18n-context";
 
 export function HeroSection() {
+  const { t } = useI18n();
+
+  const principles = [
+    {
+      icon: Sparkles,
+      title: t("principle1Title"),
+      text: t("principle1Text"),
+    },
+    {
+      icon: BrainCircuit,
+      title: t("principle2Title"),
+      text: t("principle2Text"),
+    },
+    {
+      icon: Users,
+      title: t("principle3Title"),
+      text: t("principle3Text"),
+    },
+  ];
+
   return (
     <section className="shell grid min-h-[calc(100vh-7rem)] items-center gap-10 py-16 lg:grid-cols-[1.1fr_0.9fr]">
       <div className="animate-fade-up" id="top">
-        <Badge variant="clay">Hackverse 24H · Vercel-ready frontend</Badge>
         <h1 className="display-title mt-5 max-w-5xl text-6xl sm:text-7xl lg:text-8xl">
-          Unlock your true campus potential.
+          {t("heroTitle")}
         </h1>
         <p className="mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-          Stop missing out. Campus Radar intelligently connects you with the right peers, associations, and events at the perfect time, turning your daily schedule into game-changing opportunities.
+          {t("heroSubtitle")}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Button asChild size="lg">
             <Link href="/signup">
-              Get Started <ArrowUpRight className="h-4 w-4" />
+              {t("getStarted")} <ArrowUpRight className="h-4 w-4" />
             </Link>
           </Button>
           <Button asChild variant="outline" size="lg">
-            <Link href="/login">Log in</Link>
+            <Link href="/login">{t("logIn")}</Link>
           </Button>
         </div>
       </div>
@@ -56,22 +61,21 @@ export function HeroSection() {
           <span className="absolute left-[73%] top-[66%] h-4 w-4 rounded-full bg-radar-blue shadow-[0_0_0_10px_rgba(65,109,122,0.14)]" />
         </div>
         <div className="relative -mt-24 rounded-[1.5rem] border border-border bg-card/90 p-6 shadow-card backdrop-blur-xl">
-          <p className="eyebrow">Live connection moment</p>
+          <p className="eyebrow">{t("radarLiveConnection")}</p>
           <h2 className="font-display text-4xl leading-[0.95] tracking-[-0.06em]">
-            45 minutes free near Block B.
+            {t("radarFreeTime")}
           </h2>
           <p className="mt-4 text-sm leading-6 text-muted-foreground">
-            6 new students are free, Robotics Club starts soon, and a verified mentor is
-            available. Risk is low because assumptions are visible.
+            {t("radarDescription")}
           </p>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-2xl border border-border bg-background/60 p-4">
               <strong className="block text-2xl text-radar-forest">87%</strong>
-              <span className="text-xs font-bold text-muted-foreground">relevance</span>
+              <span className="text-xs font-bold text-muted-foreground">{t("radarRelevance")}</span>
             </div>
             <div className="rounded-2xl border border-border bg-background/60 p-4">
-              <strong className="block text-2xl text-radar-forest">low</strong>
-              <span className="text-xs font-bold text-muted-foreground">assumption risk</span>
+              <strong className="block text-2xl text-radar-forest">{t("radarLow")}</strong>
+              <span className="text-xs font-bold text-muted-foreground">{t("radarRisk")}</span>
             </div>
           </div>
         </div>
