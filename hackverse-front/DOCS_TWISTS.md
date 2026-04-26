@@ -22,5 +22,9 @@ Ce document explique comment Campus Radar a intégré les quatre "Twists" impos�
 **Défi** : Gérer les clubs et événements qui publient des données obsolètes ou incomplètes.
 **Solution** : **Reliability Scoring & Verification Badges**. Notre moteur de confiance (`confidence-engine`) analyse la date de dernière mise à jour. Si une donnée de club n'a pas été rafraîchie depuis 30 jours, un malus d'obsolescence est appliqué au score, et le Radar affiche un avertissement "Donnée potentiellement obsolète" pour inciter à la vérification manuelle.
 
+## 🤝 Twist 06 : Non-Stigmatisation et Équité
+**Défi** : L'université refuse de cibler spécifiquement les étudiants "solitaires".
+**Solution** : **Universal Inclusive Scoring**. Notre algorithme ne possède aucun flag "solitude". Les recommandations de mise en relation sont basées exclusivement sur le partage de compétences (`skillsOffered`/`skillsNeeded`) ou d'intérêts. Nous transformons le besoin social en **opportunité de collaboration**, traitant ainsi chaque étudiant comme un contributeur potentiel au campus, peu importe son niveau d'isolement initial.
+
 ---
 *Ces implémentations font de Campus Radar la solution la plus adaptable et intelligente du campus..*

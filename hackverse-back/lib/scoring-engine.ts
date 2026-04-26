@@ -13,6 +13,9 @@ import type {
 } from "@/lib/types";
 import { buildExplanation } from "@/lib/explanation-engine";
 
+// TWIST 06 : Anti-Stigmatisation
+// We intentionally avoid any feature related to "loneliness" or "social isolation".
+// Recommendations are interest and skill-driven only to ensure inclusivity.
 const WEIGHTS = {
   InterestScore: 0.25,
   SkillScore: 0.2,
