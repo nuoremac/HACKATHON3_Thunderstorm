@@ -23,4 +23,4 @@ Ce document explique comment Campus Radar a intégré les quatre "Twists" impos�
 **Solution** : **Reliability Scoring & Verification Badges**. Notre moteur de confiance (`confidence-engine`) analyse la date de dernière mise à jour. Si une donnée de club n'a pas été rafraîchie depuis 30 jours, un malus d'obsolescence est appliqué au score, et le Radar affiche un avertissement "Donnée potentiellement obsolète" pour inciter à la vérification manuelle.
 
 ---
-*Ces implémentations font de Campus Radar la solution la plus adaptable et intelligente du campus.*
+*Ces implémentations font de Campus Radar la solution la plus adaptable et intelligente du campus..*
