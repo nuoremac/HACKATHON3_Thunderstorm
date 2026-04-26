@@ -3,6 +3,9 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
+import dynamic from "next/dynamic";
+import { memo } from "react";
+
 import {
   ArrowUpRight,
   CheckCircle2,
@@ -21,15 +24,6 @@ import {
   Moon,
   Monitor
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 import {
   calculateConfidence,
@@ -53,6 +47,15 @@ import {
   engagementData as mockEngagementData,
   riskItems as mockRiskItems
 } from "@/data/mock-campus";
+
+// Dynamic import for Recharts to improve bundle size and prevent SSR issues
+const ResponsiveContainer = dynamic(() => import("recharts").then(mod => mod.ResponsiveContainer), { ssr: false });
+const BarChart = dynamic(() => import("recharts").then(mod => mod.BarChart), { ssr: false });
+const Bar = dynamic(() => import("recharts").then(mod => mod.Bar), { ssr: false });
+const CartesianGrid = dynamic(() => import("recharts").then(mod => mod.CartesianGrid), { ssr: false });
+const XAxis = dynamic(() => import("recharts").then(mod => mod.XAxis), { ssr: false });
+const YAxis = dynamic(() => import("recharts").then(mod => mod.YAxis), { ssr: false });
+const Tooltip = dynamic(() => import("recharts").then(mod => mod.Tooltip), { ssr: false });
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,30 +86,36 @@ export function CampusWorkspace() {
   const selectedRequest = requests.find((request) => request.id === selectedRequestId);
 
   useEffect(() => {
-    async function loadData() {
+    async function loadStudent() {
+      try {
+        const allStudents = await api.getStudents();
+        if (allStudents.length > 0) {
+          setStudent(allStudents[0]);
+        }
+      } catch (err) {
+        console.error("Failed to load student context:", err);
+      }
+    }
+    loadStudent();
+  }, []);
+
+  useEffect(() => {
+    if (!student) return;
+
+    async function loadRadarData() {
       try {
         setIsLoading(true);
-        // We'll simulate picking the first student for the demo
-        const allStudents = await api.getStudents();
-        if (allStudents.length === 0) throw new Error("No students found");
-        
-        const currentStudent = allStudents[0];
-        setStudent(currentStudent);
-
         const [recs, evs, assocs, imp] = await Promise.all([
-          api.getRecommendations(currentStudent.id),
+          api.getRecommendations(student.id),
           api.getEvents(),
           api.getAssociations(),
-          api.getImpactProfile(currentStudent.id),
+          api.getImpactProfile(student.id),
         ]);
 
         setRecommendations(recs);
         setEvents(evs);
         setAssociations(assocs);
         setImpact(imp);
-        // For now using mock requests if API doesn't have it yet or mapping it
-        // setRequests(reqs); 
-        
         setIsLoading(false);
       } catch (err) {
         console.error(err);
@@ -115,19 +124,8 @@ export function CampusWorkspace() {
       }
     }
 
-    loadData();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="h-12 w-12 animate-spin rounded-full border-4 border-radar-blue border-t-transparent" />
-          <p className="font-display font-black text-radar-blue animate-pulse">Scanning Campus Signals...</p>
-        </div>
-      </div>
-    );
-  }
+    loadRadarData();
+  }, [student?.id]);
 
   if (error || !student) {
     return (
@@ -285,21 +283,23 @@ export function CampusWorkspace() {
           <div className="flex-1 p-8 pb-20 lg:p-12">
             <div className="mx-auto max-w-6xl w-full">
               <TabsContent value="student" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <StudentRadar student={student} recommendations={recommendations} />
+                {isLoading ? <RadarSkeleton /> : <StudentRadar student={student} recommendations={recommendations} />}
               </TabsContent>
 
               <TabsContent value="impact" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <ImpactSection
-                  impact={impact}
-                  requests={requests}
-                  selectedRequestId={selectedRequestId}
-                  selectedRequestTitle={selectedRequest?.title}
-                  onSelectRequest={setSelectedRequestId}
-                />
+                {isLoading ? <RadarSkeleton /> : (
+                  <ImpactSection
+                    impact={impact}
+                    requests={requests}
+                    selectedRequestId={selectedRequestId}
+                    selectedRequestTitle={selectedRequest?.title}
+                    onSelectRequest={setSelectedRequestId}
+                  />
+                )}
               </TabsContent>
 
               <TabsContent value="events" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <EventsSection events={events} associations={associations} />
+                {isLoading ? <RadarSkeleton /> : <EventsSection events={events} associations={associations} />}
               </TabsContent>
 
               <TabsContent value="admin" className="m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -352,13 +352,13 @@ function StudentRadar({ student, recommendations }: { student: Student; recommen
   );
 }
 
-function RecommendationCard({
+const RecommendationCard = memo(({
   recommendation,
   index,
 }: {
   recommendation: Recommendation;
   index: number;
-}) {
+}) => {
   const score = scoreAsPercent(calculateRecommendationScore(recommendation.scores));
   
   const accentMapping = {
@@ -423,7 +423,9 @@ function RecommendationCard({
       </div>
     </Card>
   );
-}
+});
+
+RecommendationCard.displayName = "RecommendationCard";
 
 function ImpactSection({
   impact,
@@ -852,6 +854,26 @@ function SettingsSection({ student }: { student: Student }) {
       <div className="flex justify-end gap-3 mt-4">
         <Button variant="outline" className="border-border/60">Cancel</Button>
         <Button className="bg-radar-blue text-white hover:bg-radar-blue/90 font-bold shadow-sm">Save Changes</Button>
+      </div>
+    </div>
+  );
+}
+
+function Skeleton({ className }: { className?: string }) {
+  return <div className={cn("animate-pulse rounded-xl bg-muted/40", className)} />;
+}
+
+function RadarSkeleton() {
+  return (
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-5 w-96" />
+      </div>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        {[1, 2, 3, 4, 5, 6].map(i => (
+          <Skeleton key={i} className="h-[420px] w-full" />
+        ))}
       </div>
     </div>
   );
