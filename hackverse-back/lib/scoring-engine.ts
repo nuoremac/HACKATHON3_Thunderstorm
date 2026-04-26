@@ -206,17 +206,21 @@ function freshnessScore(lastUpdatedValues: string[]) {
   return 0.1;
 }
 
-function sourceReliabilityScore(sourceTypes: string[], explicitScores: number[]) {
+function sourceReliabilityScore(sourceTypes: string[], explicitScores: number[], updatedAtValues: string[] = []) {
   if (explicitScores.length) {
     return clamp(explicitScores.reduce((sum, score) => sum + score, 0) / explicitScores.length);
   }
 
+  // TWIST 07: Semester Freshness check
+  // If data is older than the last semester switch (e.g., Feb 1st), we penalize its reliability
+  const SEMESTER_SWITCH_DATE = new Date("2026-02-01").getTime();
+  const isOutdated = updatedAtValues.some(val => new Date(val).getTime() < SEMESTER_SWITCH_DATE);
+  let reliabilityPenalty = isOutdated ? 0.3 : 0;
+
   const normalized = sourceTypes.map((item) => item.toLowerCase());
-  if (normalized.some((item) => item.includes("official") || item.includes("admin"))) return 1;
-  if (normalized.some((item) => item.includes("timetable"))) return 0.8;
-  if (normalized.some((item) => item.includes("student"))) return 0.7;
-  if (normalized.some((item) => item.includes("inferred"))) return 0.5;
-  return 0.2;
+  if (normalized.some((item) => item.includes("official"))) return 1 - reliabilityPenalty;
+  if (normalized.some((item) => item.includes("timetable"))) return 0.8 - reliabilityPenalty;
+  return 0.5 - reliabilityPenalty;
 }
 
 function explorationScore(student: Student, targetType: RecommendationType, target: Student | Association | Event | HelpRequest) {
@@ -306,7 +310,8 @@ export function buildRecommendation(context: CandidateContext): RecommendationOu
   ]);
   const reliability = sourceReliabilityScore(
     [...sources.map((item) => item.source_type), ...relevantSignals.map((item) => item.source)],
-    sources.map((item) => item.reliability_score)
+    sources.map((item) => item.reliability_score),
+    [...sources.map(s => s.last_updated), ...(target as { updated_at?: string }).updated_at ? [(target as { updated_at?: string }).updated_at as string] : []]
   );
   const conflict = conflictPenalty(context);
   const breakdown: ScoreBreakdown = {

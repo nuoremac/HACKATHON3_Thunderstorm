@@ -26,5 +26,9 @@ Ce document explique comment Campus Radar a intégré les quatre "Twists" impos�
 **Défi** : L'université refuse de cibler spécifiquement les étudiants "solitaires".
 **Solution** : **Social Anonymization & Neutrality Adjustment**. Notre algorithme ne possède aucun flag "solitude". Techniquement, nous avons implémenté un **ajustement de neutralité** : si un étudiant a peu d'interactions passées, son score social est automatiquement normalisé à la valeur neutre (0.5) et reçoit un "boost d'équité". Cela garantit que les profils moins actifs sont traités avec la même priorité que les profils populaires, sans jamais être étiquetés comme "isolés" ou "à aider".
 
+## 🔄 Twist 07 : Basculement Global de Semestre
+**Défi** : Gérer le changement simultané de toutes les cohortes, salles et rythmes.
+**Solution** : **Atomic Context Reset**. Notre système possède un mécanisme d'invalidation massive. Lors d'un changement de semestre, le Radar déclenche un re-scan prioritaire des emplois du temps (fichiers ICS) pour mettre à jour instantanément les fenêtres d'opportunité en fonction des nouveaux lieux de cours et des nouveaux groupes de TD.
+
 ---
 *Ces implémentations font de Campus Radar la solution la plus adaptable et intelligente du campus..*
