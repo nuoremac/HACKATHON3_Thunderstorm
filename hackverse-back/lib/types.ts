@@ -10,8 +10,10 @@ export interface Student {
   id: UUID;
   name: string;
   email: string;
+  initials?: string;
   department: string;
   academic_year: string;
+  is_commuter?: boolean;
   interests: string[];
   skills_offered: string[];
   skills_needed: string[];

@@ -94,7 +94,22 @@ function availabilityScore(context: CandidateContext) {
       const overlap = Math.max(0, Math.min(windowEnd, end) - Math.max(windowStart, start));
       return Math.max(best, Math.round(overlap / 60000));
     }, 0);
-    return clamp(overlapMinutes / requiredMinutes);
+
+    let score = clamp(overlapMinutes / requiredMinutes);
+
+    // TWIST 04: Commuter Priority (Navetteurs)
+    // If student is a commuter and the event is longer than 60 mins, 
+    // we penalize it because they only stay 35-50 mins between classes.
+    if (student.is_commuter && requiredMinutes > 60) {
+      score *= 0.6; // High penalty for long events for commuters
+    }
+    
+    // Conversely, if the event or help match is "Flash" (<= 45 mins), we boost it for commuters
+    if (student.is_commuter && requiredMinutes <= 45 && overlapMinutes >= requiredMinutes) {
+      score = 1.0; // Perfect match for a commuter's break
+    }
+
+    return score;
   }
 
   if (targetType === "help_opportunity") {

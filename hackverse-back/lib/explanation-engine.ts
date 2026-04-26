@@ -42,7 +42,11 @@ export function buildExplanation(
   }
 
   if (scoreBreakdown.AvailabilityScore > 0) {
-    whyNow.push("Current timing and availability create a usable connection window.");
+    if (student.is_commuter) {
+      whyNow.push("Optimized for your short breaks between classes as a commuter.");
+    } else {
+      whyNow.push("Current timing and availability create a usable connection window.");
+    }
   }
   if (scoreBreakdown.FreshnessScore >= 0.7) {
     whyNow.push("The supporting data is recent enough to trust for a timely recommendation.");
