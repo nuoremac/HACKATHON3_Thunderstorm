@@ -269,7 +269,14 @@ function conflictPenalty(context: CandidateContext) {
 
   if (targetType === "event") {
     const event = target as Event;
-    if (event.verification_status !== "verified") penalty += 0.05;
+    if (event.verification_status !== "verified") penalty += 0.15; // Increased penalty for Twist 05
+    
+    // TWIST 05: Obsolescence detection
+    // If the event was updated more than 30 days ago, it might be obsolete
+    if (event.updated_at) {
+      const ageInDays = (Date.now() - new Date(event.updated_at).getTime()) / (1000 * 60 * 60 * 24);
+      if (ageInDays > 30) penalty += 0.2; // Significant penalty for potentially outdated club data
+    }
   }
 
   if (!sources.length) penalty += 0.05;
