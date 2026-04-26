@@ -1,7 +1,26 @@
-# TWIST 03 : Confidentialité et Vie Privée
+# Campus Radar - Hackathon Twists Implementation
 
-## Onboarding Minimaliste
-Conformément au Twist 03, nous ne demandons ni hobbies ni état émotionnel au démarrage.
+Ce document explique comment Campus Radar a intégré les quatre "Twists" imposés durant la compétition.
 
-## Transparence
-Le Dashboard indique clairement quand une recommandation est basée sur une "Inférence" (donnée supposée) plutôt que sur une donnée déclarée.
+## 🌀 Twist 01 : Intégration des Nouveaux Étudiants
+**Défi** : Booster la visibilité des événements pour les nouveaux arrivants.
+**Solution** : Algorithm de "Cold Start" qui détecte les comptes récents (< 14j) et force une diversification des recommandations (Événements + Mentors) en haut du Radar.
+
+## 🛡️ Twist 02 : Profils Vides et Incomplets
+**Défi** : Garder le système opérationnel même si l'utilisateur ne remplit rien.
+**Solution** : **Assumption Engine**. Le système fait des suppositions intelligentes basées sur le département de l'étudiant pour proposer des intérêts "par défaut", évitant ainsi le syndrome de la page blanche.
+
+## 🤐 Twist 03 : Confidentialité et Vie Privée
+**Défi** : Interdiction de demander hobbies/émotions au démarrage.
+**Solution** : **Onboarding Zero-Knowledge**. Nous ne demandons que l'Email et le Département. Le système déduit les affinités au fil du temps via les "Signals", garantissant une vie privée totale à l'inscription.
+
+## ⏱️ Twist 04 : Optimisation pour les Navetteurs
+**Défi** : Les étudiants navetteurs n'ont que 35 à 50 minutes de pause entre les cours.
+**Solution** : **Time-Aware Scoring**. Notre moteur de recommandation filtre la durée des activités. Pour un navetteur, les événements longs sont pénalisés et les "Flash Matches" (micro-interactions de moins de 45 min) sont boostés pour s'insérer dans leurs pauses.
+
+## 🕵️ Twist 05 : Fiabilité et Obsolescence des Données
+**Défi** : Gérer les clubs et événements qui publient des données obsolètes ou incomplètes.
+**Solution** : **Reliability Scoring & Verification Badges**. Notre moteur de confiance (`confidence-engine`) analyse la date de dernière mise à jour. Si une donnée de club n'a pas été rafraîchie depuis 30 jours, un malus d'obsolescence est appliqué au score, et le Radar affiche un avertissement "Donnée potentiellement obsolète" pour inciter à la vérification manuelle.
+
+---
+*Ces implémentations font de Campus Radar la solution la plus adaptable et intelligente du campus.*

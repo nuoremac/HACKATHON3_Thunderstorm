@@ -44,10 +44,10 @@ export async function getRecommendations(studentId: string): Promise<Recommendat
   return data.recommendations.map((rec: any) => ({
     id: rec.targetId,
     type: mapRecType(rec.targetType),
-    title: rec.target.title || rec.target.name || "Recommendation",
-    subtitle: rec.target.subtitle || rec.target.department || "",
-    description: rec.explanation.why_this_recommendation[0] || "",
-    target: rec.target.name || rec.target.title || "",
+    title: rec.target?.title || rec.target?.name || "Requirement Match",
+    subtitle: rec.target?.subtitle || rec.target?.department || "Recommended for you",
+    description: rec.explanation?.why_this_recommendation?.[0] || "",
+    target: rec.target?.name || rec.target?.title || "Contextual Radar",
     actionLabel: "View Details",
     secondaryActionLabel: "Not interested",
     reasons: rec.explanation.why_this_recommendation,
@@ -128,6 +128,7 @@ function mapBackendStudent(s: any): Student {
   return {
     id: s.id,
     name: s.name,
+    email: s.email || "",
     initials: getInitials(s.name),
     department: s.department,
     academicYear: s.academic_year,
