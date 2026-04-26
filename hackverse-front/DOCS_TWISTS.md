@@ -30,5 +30,9 @@ Ce document explique comment Campus Radar a intégré les quatre "Twists" impos�
 **Défi** : Gérer le changement simultané de toutes les cohortes, salles et rythmes.
 **Solution** : **Atomic Context Reset**. Notre système possède un mécanisme d'invalidation massive. Lors d'un changement de semestre, le Radar déclenche un re-scan prioritaire des emplois du temps (fichiers ICS) pour mettre à jour instantanément les fenêtres d'opportunité en fonction des nouveaux lieux de cours et des nouveaux groupes de TD.
 
+## 🔌 Twist 08 : Adoption Transparente & Interopérabilité
+**Défi** : L'adoption doit marcher sans imposer une nouvelle application à tout le monde.
+**Solution** : **Headless Service & ICS Synchronization**. Campus Radar n'est pas une "destination isolée". Nous avons implémenté l'interopérabilité via le standard **ICS**. Les recommandations peuvent être exportées d'un clic vers les calendriers natifs (Google, Apple, Outlook). De plus, le système ingère les flux existants sans demander aucune saisie manuelle aux associations, garantissant une adoption fluide dans l'écosystème numérique actuel du campus.
+
 ---
 *Ces implémentations font de Campus Radar la solution la plus adaptable et intelligente du campus..*

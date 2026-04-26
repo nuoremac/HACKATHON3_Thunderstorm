@@ -586,7 +586,10 @@ function EventsSection({ events, associations }: { events: CampusEvent[]; associ
                         </div>
                         <span className="text-xs font-semibold text-muted-foreground">{event.interestedCount} going</span>
                       </div>
-                      <Button size="sm" className="rounded-xl shadow-none">RSVP Now</Button>
+                      <div className="flex flex-col items-center gap-1.5">
+                        <Button size="sm" className="rounded-xl shadow-none">RSVP Now</Button>
+                        <span className="text-[9px] font-bold text-muted-foreground/60 uppercase tracking-tighter">Standard ICS Sync 🔌</span>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
